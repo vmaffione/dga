@@ -1,0 +1,7 @@
+\beamer@endinputifotherversion {3.10pt}
+\select@language {italian}
+\beamer@sectionintoc {1}{Introduzione}{3}{0}{1}
+\beamer@sectionintoc {2}{Intel Single-Chip Cloud Computer}{6}{0}{2}
+\beamer@sectionintoc {3}{Programmazione con l'SCC}{13}{0}{3}
+\beamer@sectionintoc {4}{Algoritmo genetico parallelo}{16}{0}{4}
+\beamer@sectionintoc {5}{Risultati delle simulazioni}{31}{0}{5}

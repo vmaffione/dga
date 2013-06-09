@@ -1,0 +1,43 @@
+\select@language {italian}
+\contentsline {chapter}{\numberline {1}Introduzione ed obiettivi}{1}
+\contentsline {section}{\numberline {1.1}Nuove tendenze architetturali}{1}
+\contentsline {section}{\numberline {1.2}Obiettivi della tesi}{3}
+\contentsline {chapter}{\numberline {2}Architettura dell'SCC}{4}
+\contentsline {section}{\numberline {2.1}Introduzione all'SCC}{4}
+\contentsline {section}{\numberline {2.2}Architettura}{6}
+\contentsline {section}{\numberline {2.3}Descrizione del tile}{7}
+\contentsline {section}{\numberline {2.4} Descrizione funzionale dei componenti dell'SCC}{9}
+\contentsline {subsection}{\numberline {2.4.1}Message passing buffer (MPB)}{9}
+\contentsline {subsection}{\numberline {2.4.2} Core P54C }{9}
+\contentsline {subsection}{\numberline {2.4.3} Cache L2 }{12}
+\contentsline {subsection}{\numberline {2.4.4}Tabelle di lookup per la traduzione degli indirizzi}{12}
+\contentsline {subsection}{\numberline {2.4.5} Mesh Interface Unit (MIU) }{13}
+\contentsline {subsection}{\numberline {2.4.6}Registri di configurazione}{15}
+\contentsline {subsection}{\numberline {2.4.7}Voltage regulator controller}{15}
+\contentsline {subsection}{\numberline {2.4.8}Rete mesh}{16}
+\contentsline {section}{\numberline {2.5}Gestione dinamica della frequenza di funzionamento e della tensione di alimentazione}{17}
+\contentsline {chapter}{\numberline {3}Programmazione con l'SCC}{19}
+\contentsline {section}{\numberline {3.1}Introduzione}{19}
+\contentsline {section}{\numberline {3.2}La libreria RCCE}{20}
+\contentsline {subsection}{\numberline {3.2.1}Implementazione delle funzioni di comunicazione non-gory}{24}
+\contentsline {subsection}{\numberline {3.2.2}Implementazione dei flag di sincronizzazione}{25}
+\contentsline {chapter}{\numberline {4}Algoritmo genetico parallelo}{27}
+\contentsline {section}{\numberline {4.1}Algoritmi genetici}{27}
+\contentsline {subsection}{\numberline {4.1.1}Fitness scaling}{29}
+\contentsline {subsection}{\numberline {4.1.2}Selezione}{30}
+\contentsline {subsection}{\numberline {4.1.3}Crossover}{30}
+\contentsline {subsection}{\numberline {4.1.4}Mutazione}{30}
+\contentsline {subsection}{\numberline {4.1.5}Condizioni di terminazione}{31}
+\contentsline {section}{\numberline {4.2}Parallelizzazione dell'algoritmo genetico}{32}
+\contentsline {section}{\numberline {4.3}Schema di migrazione}{34}
+\contentsline {subsection}{\numberline {4.3.1}Schema di comunicazione}{34}
+\contentsline {subsection}{\numberline {4.3.2}Ricerca di cicli hamiltoniani}{37}
+\contentsline {section}{\numberline {4.4}Algoritmo distribuito di terminazione}{40}
+\contentsline {section}{\numberline {4.5}Raccolta dei risultati}{45}
+\contentsline {chapter}{\numberline {5}Interfaccia ed implementazione}{48}
+\contentsline {section}{\numberline {5.1}Interfaccia}{48}
+\contentsline {section}{\numberline {5.2}Implementazione}{51}
+\contentsline {chapter}{\numberline {6}Risultati sperimentali}{54}
+\contentsline {section}{\numberline {6.1}Dataset 1}{54}
+\contentsline {section}{\numberline {6.2}Dataset 2}{55}
+\contentsline {section}{\numberline {6.3}Considerazioni sui risultati ottenuti}{56}

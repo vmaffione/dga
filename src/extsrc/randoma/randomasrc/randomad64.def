@@ -1,0 +1,67 @@
+LIBRARY randomad64
+
+VERSION 2008.1104
+
+EXPORTS InstructionSet
+        ReadTSC
+        
+        MersenneRandomInit
+        MersenneRandomInitByArray
+        MersenneRandom
+        MersenneIRandom
+        MersenneIRandomX
+        MersenneBRandom
+        
+        MersRandomInit
+        MersRandomInitByArray
+        MersRandom
+        MersIRandom
+        MersIRandomX
+        MersBRandom
+
+        MotherRandomInit
+        MotherRandom
+        MotherIRandom
+        MotherBRandom
+
+        MotRandomInit
+        MotRandom
+        MotIRandom
+        MotBRandom
+        
+        SFMTRandomInit
+        SFMTRandomInitByArray
+        SFMTRandom
+        SFMTRandomL
+        SFMTIRandom
+        SFMTIRandomX
+        SFMTBRandom
+        
+        SFMTgenRandomInit
+        SFMTgenRandomInitByArray
+        SFMTgenRandom
+        SFMTgenRandomL
+        SFMTgenIRandom
+        SFMTgenIRandomX
+        SFMTgenBRandom
+
+        MersenneRandomInitD         = MersenneRandomInit
+        MersenneRandomInitByArrayD  = MersenneRandomInitByArray
+        MersenneRandomD             = MersenneRandom
+        MersenneIRandomD            = MersenneIRandom
+        MersenneIRandomXD           = MersenneIRandomX
+        MersenneBRandomD            = MersenneBRandom
+
+        MotherRandomInitD           = MotherRandomInit
+        MotherRandomD               = MotherRandom
+        MotherIRandomD              = MotherIRandom
+        MotherBRandomD              = MotherBRandom
+
+        SFMTgenRandomInitD          = SFMTgenRandomInit
+        SFMTgenRandomInitByArrayD   = SFMTgenRandomInitByArray
+        SFMTgenRandomD              = SFMTgenRandom
+        SFMTgenRandomLD             = SFMTgenRandomL
+        SFMTgenIRandomD             = SFMTgenIRandom
+        SFMTgenIRandomXD            = SFMTgenIRandomX
+        SFMTgenBRandomD             = SFMTgenBRandom
+

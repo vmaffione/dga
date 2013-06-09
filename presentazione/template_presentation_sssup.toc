@@ -1,0 +1,6 @@
+\beamer@endinputifotherversion {3.10pt}
+\select@language {italian}
+\beamer@sectionintoc {1}{Introduzione}{2}{0}{1}
+\beamer@sectionintoc {2}{Descrizione dell'Algoritmo}{4}{0}{2}
+\beamer@sectionintoc {3}{Testing e Scelta del Passo Temporale}{8}{0}{3}
+\beamer@sectionintoc {4}{Esempi e Conclusioni}{15}{0}{4}

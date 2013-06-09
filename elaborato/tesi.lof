@@ -1,0 +1,29 @@
+\select@language {italian}
+\addvspace {10\p@ }
+\addvspace {10\p@ }
+\contentsline {figure}{\numberline {2.1}{\ignorespaces Schema a blocchi dell'SCC }}{6}
+\contentsline {figure}{\numberline {2.2}{\ignorespaces Piattaforma di sviluppo dell'SCC }}{8}
+\contentsline {figure}{\numberline {2.3}{\ignorespaces Schema a blocchi di un tile }}{9}
+\contentsline {figure}{\numberline {2.4}{\ignorespaces Entrata della tabella delle pagine del P54C }}{10}
+\contentsline {figure}{\numberline {2.5}{\ignorespaces Schema di traduzione degli indirizzi }}{14}
+\addvspace {10\p@ }
+\addvspace {10\p@ }
+\contentsline {figure}{\numberline {4.1}{\ignorespaces Primo passo di migrazione nel caso di numero pari di nodi. I numeri indicati sui nodi sono i numeri d'ordine. }}{36}
+\contentsline {figure}{\numberline {4.2}{\ignorespaces Secondo passo di migrazione nel caso di numero pari di nodi. I numeri indicati sui nodi sono i numeri d'ordine. }}{37}
+\contentsline {figure}{\numberline {4.3}{\ignorespaces Percorso seguito dall'algoritmo generale }}{39}
+\contentsline {figure}{\numberline {4.4}{\ignorespaces Ciclo scelto nel caso di sottomatrice con numero dispari di elementi. In verde \`e evidenziata la comunicazione in generale pi\`u lenta rispetto alle altre. }}{41}
+\contentsline {figure}{\numberline {4.5}{\ignorespaces Ciclo scelto nel caso 2 }}{42}
+\contentsline {figure}{\numberline {4.6}{\ignorespaces Ciclo scelto nel caso 3 }}{43}
+\contentsline {figure}{\numberline {4.7}{\ignorespaces Ciclo scelto nel caso 4 }}{44}
+\contentsline {figure}{\numberline {4.8}{\ignorespaces Ciclo scelto nel caso 5 }}{45}
+\contentsline {figure}{\numberline {4.9}{\ignorespaces Macchina a stati per l'algoritmo di terminazione relativa ad un nodo non coordinatore }}{46}
+\contentsline {figure}{\numberline {4.10}{\ignorespaces Macchina a stati per l'algoritmo di terminazione relativa al nodo coordinatore }}{47}
+\addvspace {10\p@ }
+\addvspace {10\p@ }
+\contentsline {figure}{\numberline {6.1}{\ignorespaces Parametri dell'algoritmo genetico utilizzati. }}{55}
+\contentsline {figure}{\numberline {6.2}{\ignorespaces Dataset 1 }}{56}
+\contentsline {figure}{\numberline {6.3}{\ignorespaces Andamento del minimo ottenuto in funzione del numero di core impiegati per il dataset 1 }}{57}
+\contentsline {figure}{\numberline {6.4}{\ignorespaces Tabella dei risultati per il dataset 1 }}{59}
+\contentsline {figure}{\numberline {6.5}{\ignorespaces Dataset 2 }}{60}
+\contentsline {figure}{\numberline {6.6}{\ignorespaces Andamento del minimo ottenuto in funzione del numero di core impiegati per il dataset 2 }}{60}
+\contentsline {figure}{\numberline {6.7}{\ignorespaces Tabella dei risultati per il dataset 2 }}{61}

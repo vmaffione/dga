@@ -1,0 +1,609 @@
+\documentclass{beamer}
+\usetheme{JLTree}
+
+\usepackage{graphicx}
+\usepackage[italian]{babel}
+\usepackage{amsfonts}
+\usepackage{url}
+\usepackage{amsmath, amssymb, amsthm}
+\usepackage{multicol}
+
+\newcommand{\numberset}{\mathbb}
+\newcommand{\N}{\numberset{N}}
+\newcommand{\R}{\numberset{R}}
+\newcommand{\Z}{\numberset{Z}}
+\newcommand{\pscal}{\text{\large{\textbf{\textperiodcentered}}}}
+
+
+
+
+
+
+% opening
+\title[Algoritmo genetico parallelo sul Single-Chip Cloud Computer]{Algoritmo genetico parallelo sul Single-Chip Cloud Computer}
+\author[\hspace{2em} Vincenzo Maffione\hspace{3.6cm} Tesi di Licenza \hspace{2.5cm} 8 Luglio 2011]{}
+\date{}
+
+
+\begin{document}
+
+
+\begin{frame}
+\vspace*{-0.1cm}
+    \titlepage
+\vspace*{-2.6cm}
+
+\begin{center}
+{\footnotesize Tesi di Licenza\\
+Scuola Superiore Sant'Anna}
+\end{center}
+
+\begin{center}
+\begin{tabular}{l p{2.5cm} r c}
+
+\footnotesize\textsc{Relatore} & & \footnotesize\textsc{Candidato} \\
+{\small Prof. \textit{Giuseppe Lipari}} & &\small\textit{Vincenzo Maffione}\\
+\vspace{0.4em}
+{\footnotesize Scuola Superiore Sant'Anna} & &\\
+\footnotesize\textsc{Tutor} & &  \\
+{\small Prof. \textit{Paolo Ancilotti}} && \\
+{\footnotesize Scuola Superiore Sant'Anna} && \\
+\end{tabular}
+\end{center}
+
+\begin{center}
+{\small 8 Luglio 2011}
+\end{center}
+
+\end{frame}
+
+
+%=================================================================
+\section{Introduzione}
+%=================================================================
+
+\begin{frame}
+  \frametitle{Tendenze architetturali}
+
+  \begin{block}{Caratterizzazione}
+Rappresentano tutti e soli gli operatori funzionali monotoni \alert{invarianti al contrasto}.
+  \end{block}
+
+  \begin{block}{Principio di funzionamento}
+    \begin{enumerate}
+
+      \item decomposizione dell'ingresso nell'insieme delle sue \emph{cross sections}
+
+      \item applicazione di un'operatore \emph{binario}, \emph{crescente} ed \emph{invariante alla traslazione}
+
+      \item ricostruzione dell'uscita tramite il principio di sovrapposizione degli effetti
+
+    \end{enumerate}
+  \end{block}
+\end{frame}
+
+
+\begin{frame}
+  \frametitle{Schemi alle Differenze Finite (FDS) per moti di curvatura}
+
+  Tutte le scale spaziali \emph{causali}, \emph{locali}, \emph{isometriche} ed \emph{invarianti al contrasto} si basano su EDP del tipo
+
+$$
+\frac{\partial u}{\partial t}=g({\rm curv}(u),t)|Du|
+$$
+
+\vspace{0.5em}
+
+  \begin{description} 
+    \item[Moto di Curvatura Medio (MCM):] $g({\rm curv}(u),t)={\rm curv}(u)$
+  \end{description}
+
+  \begin{block}{Tecniche di simulazione numerica}
+
+    \begin{itemize}
+      \item interpolazione di Shannon e utilizzo di operatori differenziali continui
+      \item costruzione di uno schema discreto che soddisfi requisiti di \emph{consistenza}, \emph{stabilit\`a} e \emph{convergenza}
+    \end{itemize}
+  \end{block}
+
+\end{frame}
+
+
+
+%=================================================================
+\section{Descrizione dell'Algoritmo}
+%=================================================================
+
+\begin{frame}
+
+  \frametitle{Analisi del codice C - \alert{main} function}
+
+  {\bf Input:} immagine iniziale $u_0$
+
+  \vspace{0.5em}
+
+  {\bf Output:} immagine $u$ evoluta ad una scala normalizzata $R$
+
+  \vspace{0.5em}
+
+  \begin{itemize}
+    \item leggi $u_0$ e valuta il numero di canali da processare 
+    \item calcola il numero di iterazioni necessarie, $n_{iter}=\displaystyle\frac{R^2}{2\Delta t}$
+    \item considera l'insieme di livello associato al valore di grigio $k$-esimo e prendi $v_k(i,j)=\left\{
+  \begin{array}{ll}
+    255 & \hbox{ se } u(i,j) \ge k \\
+    0 & \hbox{ altrimenti } \\
+  \end{array}
+\right.
+$
+    \item applica la funzione \alert{mcm} a $v_k$, ottenendo l'array $w_k$
+    \item $u(i,j)=\sup\{\lambda\mbox{ }|\mbox{ } w_{\lambda}(i,j)\ge 127,5\}$
+  \end{itemize}
+
+\end{frame}
+
+
+\begin{frame}
+
+  \frametitle{Analisi del codice C - \alert{mcm} function}
+
+  \only<1>{
+
+    \begin{itemize}
+     \item calcola le derivate parziali $u_x$ e $u_y$ ed il gradiente discreto $Du$
+    \end{itemize}
+
+    \begin{center}
+    \begin{enumerate}
+      \item $u_x= \displaystyle \frac{1}{8\Delta x} \cdot u_n\star
+\begin{pmatrix}
+-1  & 0 & 1 \\
+-2  & 0 & 2 \\
+-1  & 0 & 1 
+\end{pmatrix}$
+
+      \item $u_y= \displaystyle\frac{1}{8\Delta x} \cdot u_n\star
+\begin{pmatrix}
+-1 & -2 & -1 \\
+0  &  0 &  0 \\
+1  &  2 &  1 
+\end{pmatrix}$
+	      
+      \item $Du=\displaystyle\sqrt{u_x^2+u_y^2}$
+
+    \end{enumerate}
+    \end{center}
+
+    \begin{block}{}
+     Gli schemi numerici sono \alert{consistenti} con gli operatori differenziali.
+    \end{block}
+
+}
+
+  \only<2>{
+    \begin{itemize}
+      \item calcola le derivate parziali $u_x$, $u_y$ ed il gradiente discreto $Du$
+      \item se $|Du|<T_g \Rightarrow $ applica l'Equazione del Calore (diffusione isotropica)
+    \end{itemize}
+    
+    \begin{center}
+    \begin{enumerate}
+
+      \item $\Delta u_n= \displaystyle\frac{1}{\Delta x^2}\cdot u_n \star
+\begin{pmatrix}
+0 & 1  & 0 \\
+1 & -4 & 1 \\
+0 & 1  & 0 
+\end{pmatrix}
+$
+      \item $u_{n+1}=u_n+ \displaystyle\frac{\Delta t}{2}\cdot \Delta u_n$
+    \end{enumerate}
+    \end{center}
+
+    \begin{block}{}
+La successione $u_n$ \`e \alert{consistente} per ogni valore di $\Delta t$ e \alert{stabile} per $\Delta t \le 0,5$. 
+    \end{block}
+}
+
+\only<3>{
+
+    \begin{itemize}
+      \item calcola le derivate parziali $u_x$, $u_y$ ed il gradiente discreto $Du$
+      \item se $|Du|<T_g \Rightarrow $ applica l'Equazione del Calore (diffusione isotropica)
+      \item se $|Du|>T_g \Rightarrow $ applica uno schema lineare basato sulla convoluzione con un kernel variabile
+    \end{itemize}
+
+    \begin{center}
+    \begin{enumerate}
+
+      \item $(u_{\xi\xi})_n = \displaystyle\frac{1}{\Delta x^2}\cdot u_n \star \begin{pmatrix}
+\lambda_3 & \lambda_2   & \lambda_4 \\
+\lambda_1 & -4\lambda_0 & \lambda_1 \\
+\lambda_4 & \lambda_2   & \lambda_3 \\
+\end{pmatrix}$
+\vspace{1em}
+      \item $u_{n+1}(i,j)=u_n(i,j)+\Delta t \cdot (u_{\xi\xi})_n(i,j)$ 
+    \end{enumerate}
+    \end{center}
+
+    \begin{block}{}
+La scelta dei $\lambda_i$ segue criteri di \alert{stabilit\`a} e consente di soddisfare requisiti geometrici ed analitici. 
+    \end{block}
+}
+
+\end{frame}
+
+%=================================================================
+\section{Testing e Scelta del Passo Temporale}
+%=================================================================
+
+\begin{frame}
+
+  \frametitle{Invarianza al contrasto}
+
+  \only<1>{
+    \begin{block}{}
+  Calcola il \emph{RMSE} al variare di $\Delta t$ dopo aver applicato stack filter + cambiamento di contrasto e viceversa.
+    \end{block}
+    \begin{figure}
+      %\includegraphics[width=.95\columnwidth]{contrinvdifftimesteps_lin_imgbis}
+    \end{figure}
+ 
+}
+
+  \only<2>{
+    \begin{block}{}
+  Calcola il \emph{RMSE} dopo aver applicato MCM + cambiamento di contrasto lineare e viceversa.
+    \end{block}
+    \begin{figure}
+      %\includegraphics[width=.95\columnwidth]{contrinvstackmcm_lin_imgbis}
+    \end{figure}
+}
+
+  \only<3>{
+    \begin{block}{}
+  Calcola il \emph{RMSE} dopo aver applicato MCM + cambiamento di contrasto quadratico e viceversa.
+    \end{block}
+   \begin{figure}
+    %\includegraphics[width=.95\columnwidth]{contrinvstackmcm_pow_imgbis}
+   \end{figure}
+}
+
+\end{frame}
+
+
+\begin{frame}
+ 
+  \frametitle{Propriet\`a di denoising}
+
+  \only<1>{
+    \begin{block}{}
+  Contamina una figura geometrica con $p=30\%$ di rumore uniforme e applica lo stack filter, calcolando il \emph{RMSE} al variare di $\Delta t$.
+    \end{block}
+   \begin{figure}
+    %\includegraphics[width=.95\columnwidth]{unoisedifftimestepsbis}
+   \end{figure}
+}
+
+  \only<2>{
+    \begin{block}{}
+  Contamina una figura geometrica con $p=10\%$ di rumore uniforme e calcola il \emph{RMSE}, dopo aver applicato stack filter/FDS originale.
+    \end{block}
+    \begin{figure}
+     %\includegraphics[width=.95\columnwidth]{unoise10percbisbis}
+    \end{figure}
+}
+
+  \only<3>{
+    \begin{block}{}
+  Contamina una figura geometrica con $p=30\%$ di rumore uniforme e calcola il \emph{RMSE}, dopo aver applicato stack filter/FDS originale.
+    \end{block}
+    \begin{figure}
+     %\includegraphics[width=.95\columnwidth]{unoise30percbisbis}
+    \end{figure}
+}
+
+\end{frame}
+
+
+\begin{frame}
+
+  \frametitle{Tempo di processing}
+
+  \begin{block}{Problema}
+Il tempo richiesto dall'algoritmo aumenta in modo notevole quando si utilizza lo stack filter anzich\`e lo schema originale.
+  \end{block}
+
+  \begin{block}{Possibili soluzioni}
+    \begin{itemize}
+      \item aumentare $\Delta t$ fino all'upper bound teorico di $0,5$, dovuto all'utilizzo dell'Equazione del Calore
+      \item parallelizzare opportune porzioni di codice (\emph{OpenMP})
+      \item ridurre il numero di insiemi di livello processati
+    \end{itemize}
+  \end{block}
+
+\end{frame}
+
+
+
+%=================================================================
+\section{Esempi e Conclusioni}
+%=================================================================
+
+
+\begin{frame}
+ 
+  \frametitle{Figure geometriche - 1}
+
+  \begin{columns}
+
+  \column[c]{.5\textwidth}
+    \begin{center}
+Stack Filter\\  
+\vspace*{-0.5em}
+    \begin{figure}
+      
+    \end{figure}
+    \end{center}
+
+  \column[c]{.5\textwidth}
+    \begin{center}
+FDS originale\\
+\vspace*{-0.5em}
+    \begin{figure}
+      
+    \end{figure}
+    \end{center}
+
+  \end{columns}
+
+  \begin{block}{}
+   \begin{itemize}
+    \item eliminazione dell'effetto di tassellizzazione
+    \item lo stack filter produce contorni pi\`u netti e definiti 
+   \end{itemize}
+  \end{block}
+
+\end{frame}
+
+
+\begin{frame}
+
+  \frametitle{Figure geometriche - 2}
+\vspace*{-0.5em}
+  \begin{columns}
+
+  \column[c]{.5\textwidth}
+    \begin{center}
+Stack Filter\\  
+\vspace*{-1.1em}
+    \begin{figure}
+      
+    \end{figure}
+    \end{center}
+
+  \column[c]{.5\textwidth}
+    \begin{center}
+FDS originale\\  
+\vspace*{-1.1em}
+    \begin{figure}
+      
+    \end{figure}
+    \end{center}
+
+  \end{columns}
+
+  \begin{block}{}
+   \begin{itemize}
+    \item lo stack filter non crea nuovi livelli di grigio
+    \item un insieme convesso diventa concavo e si riduce ad un punto con profilo limitante circolare 
+   \end{itemize}
+  \end{block}
+ 
+\end{frame}
+
+
+\begin{frame}
+ 
+  \frametitle{Eliminazione del rumore in un'immagine B/W ($p=30\%$)}
+
+  \only<1>{
+
+  \begin{columns}
+
+  \column[c]{.5\textwidth}
+
+    \begin{center}
+Immagine originale
+\vspace*{-0.5em}
+    \begin{figure}
+      %\includegraphics[width=.75\textwidth]{eifnew}
+    \end{figure}
+    \end{center}
+
+  \column[c]{.5\textwidth}
+
+    \begin{center}     
+Immagine affetta da rumore
+\vspace*{-0.5em}
+    \begin{figure}
+      %\includegraphics[width=.75\textwidth]{eifnew_unoise30}
+    \end{figure}
+    \end{center}
+
+  \end{columns}
+
+}
+
+  \only<2>{
+
+
+  \begin{columns}
+
+  \column[c]{.3\textwidth}
+
+    \begin{center}
+\vspace*{-1.5em}
+{\scriptsize Immagine originale}
+\vspace*{-0.7em}
+    \begin{figure}
+      %\includegraphics[width=.5\textwidth]{eifnew}
+    \end{figure}
+    \end{center}
+
+\vspace*{-0.5cm}
+
+    \begin{center}
+{\scriptsize Immagine + rumore}
+\vspace*{-0.7em}
+    \begin{figure}
+      %\includegraphics[width=.5\textwidth]{eifnew_unoise30}
+    \end{figure}
+    \end{center}
+
+  \column[c]{.45\textwidth}
+  
+    \begin{center}     
+Stack Filter
+\vspace*{-0.5em}
+    \begin{figure}
+%\includegraphics[width=.8\textwidth]{eifnew_unoise30_stackelimO3_step0dot5_sc2dot5}
+    \end{figure}
+    \end{center}
+
+  \column[c]{.45\textwidth}
+    \begin{center}
+FDS originale
+\vspace*{-0.5em}
+    \begin{figure}
+%      \includegraphics[width=.8\textwidth]{eifnew_unoise30_mcmO3_step0dot1_sc3}
+    \end{figure}
+    \end{center}
+
+  \end{columns}
+
+}
+
+\end{frame}
+
+\begin{frame}
+ 
+  \frametitle{Eliminazione del rumore in un'immagine RGB ($p=30\%$)}
+  \only<1>{
+
+  \begin{columns}
+
+  \column[c]{.5\textwidth}
+
+    \begin{center}
+Immagine originale
+\vspace*{-0.5em}
+    \begin{figure}
+%      \includegraphics[width=.95\textwidth]{naturefence}
+    \end{figure}
+    \end{center}
+
+  \column[c]{.5\textwidth}
+
+    \begin{center}     
+Immagine affetta da rumore
+\vspace*{-0.5em}
+    \begin{figure}
+%      \includegraphics[width=.95\textwidth]{naturefence_unoise30}
+    \end{figure}
+    \end{center}
+
+  \end{columns}
+
+}
+
+  \only<2>{
+
+
+  \begin{columns}
+
+  \column[c]{.25\textwidth}
+
+    \begin{center}
+\vspace*{-1.5em}
+{\scriptsize Immagine originale}
+\vspace*{-0.7em}
+    \begin{figure}
+%      \includegraphics[width=.85\textwidth]{naturefence}
+    \end{figure}
+    \end{center}
+
+\vspace*{-0.7cm}
+
+    \begin{center}
+{\scriptsize Immagine + rumore}
+\vspace*{-0.7em}
+    \begin{figure}
+%      \includegraphics[width=.85\textwidth]{naturefence_unoise30}
+    \end{figure}
+    \end{center}
+
+  \column[c]{.45\textwidth}
+  
+    \begin{center}     
+Stack Filter
+\vspace*{-0.5em}
+    \begin{figure}
+      %\includegraphics[width=.95\textwidth]{naturefence_unoise30_stackelimO3_step0dot5_sc2dot5}
+    \end{figure}
+    \end{center}
+
+  \column[c]{.45\textwidth}
+    \begin{center}
+FDS originale
+\vspace*{-0.5em}
+    \begin{figure}
+      %\includegraphics[width=.95\textwidth]{naturefence_unoise30_mcmO3_step0dot1_sc4}
+    \end{figure}
+    \end{center}
+
+  \end{columns}
+  \begin{block}{}
+    A differenza dello schema originario, lo stack filter elimina con successo il rumore additivo uniforme.
+  \end{block}
+}
+
+\end{frame}
+
+\begin{frame}
+ 
+  \frametitle{Conclusioni: pro e contro}
+
+Lo stack filter per la simulazione del Moto di Curvatura Medio svolge una funzione di \emph{smoothing} propedeutica ad un'ulteriore analisi ed estrazione del contenuto informativo delle immagini.
+
+  \begin{columns}
+
+  \column[c]{.5\textwidth}
+
+    \begin{block}{Vantaggi}
+     \begin{itemize}
+      \item stabilit\`a
+      \item invarianza al contrasto
+      \item buone propriet\`a di denoising
+     \end{itemize}
+    \end{block}
+
+  \column[c]{.5\textwidth}
+
+    \begin{block}{Svantaggi}
+     \begin{itemize}
+      \item tempi di processing non trascurabili
+      \item dipendenza da una griglia
+     \end{itemize}
+    \end{block}
+
+  \end{columns}
+
+  \begin{alertblock}{}
+    A breve sul sito \url{www.ipol.im} sar\`a possibile scaricare il codice in linguaggio C e sar\`a disponibile una descrizione dettagliata dell'algoritmo testabile direttamente online.
+  \end{alertblock}
+
+\end{frame}
+
+
+\end{document}

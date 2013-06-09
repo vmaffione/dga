@@ -1,0 +1,725 @@
+\chapter{Algoritmo genetico parallelo}
+
+Oggetto di questo lavoro è l'implementazione, sotto forma di framework, di un algoritmo genetico parallelo capace di sfruttare le potenzialità offerte
+dall'SCC. Il progetto è stato sviluppato utilizzando il linguaggio C++.
+
+Un aspetto importante dell'applicazione, che sfrutta a pieno le caratteristiche del C++, è la sua genericità rispetto alla funzione obiettivo da ottimizzare.
+Mediante l'uso dei \emph{template} C++, infatti, è possibile specificare (sempre utilizzando il linguaggio C++) una funzione obiettivo avente
+in ingresso un oggetto di tipo arbitrario, ed in uscita uno tra i tipi primitivi numerici del C++ (float, double, int, ecc.).
+
+\section{Algoritmi genetici}
+\label{sez:algGen}
+
+In questa sezione viene brevemente descritto l'algoritmo genetico sequenziale su cui si basa l'algoritmo genetico parallelo implementato nel framework.
+
+Un algoritmo genetico è un metodo stocastico di ottimizzazione che prende spunto da alcuni meccanismi biologici che gli organismi utilizzano per \emph{adattarsi} ai cambiamenti dell'ambiente in cui vivono, e quindi per evolversi evitando l'estinzione.
+
+\vspace{0.5 cm}
+
+I meccanismi biologici presi in considerazione sono sostanzialmente tre:
+\begin{itemize}
+   \item Mutazione: a causa di errori nella copia dei filamenti di DNA, le cellule degli organismi subiscono delle mutazioni che possono cambiare le caratteristiche dell'organismo stesso.
+	\item Ricombinazione (\emph{crossover}): quando gli organismi di una certa specie si riproducono in coppia i loro geni si mescolano nel nuovo organismo generato, combinandone le caratteristiche. Questo può favorire o sfavorire la perpetuazione della specie.
+	\item Selezione: non tutti gli organismi di una certa specie riescono a riprodursi. Tipicamente riescono nell'intento solo gli individui più forti.
+\end{itemize}
+
+L'idea alla base dell'algoritmo genetico è quella di definire opportunamente ed applicare iterativamente questi tre meccanismi evolutivi (chiamati \emph{operatori}) ad una popolazione di $N_p$ individui appartenenti allo spazio di ricerca su cui si vuole effettuare l'ottimizzazione. Gli individui sono anche detti \emph{cromosomi}.
+
+Il valore della funzione obiettivo calcolata su un certo individuo è anche detta \emph{fitness} dell'individuo.
+
+La scelta dei tre operatori condiziona fortemente le prestazioni della ricerca.
+
+\vspace{0.5 cm}
+
+Gli algoritmi genetici sono nati per risolvere problemi in cui il cromosoma è una stringa di bit, anche se successivamente sono stati adattati a risolvere problemi in cui il cromosoma è un vettore di numeri reali. Il cromosoma è comunque costituito da $n$ componenti (siano esse bit oppure numeri reali) che vengono chiamate \emph{geni}.
+
+\vspace{0.5 cm}
+
+L'algoritmo genetico che verrà usato è così schematizzato:
+\begin{enumerate}
+   \item Vengono creati gli $N_p$ elementi costituenti la popolazione iniziale, in modo casuale oppure inizializzandoli opportunamente.
+	\item La popolazione corrente viene utilizzata per creare la nuova popolazione, nel modo seguente:
+		\begin{enumerate}
+   		\item Viene calcolato il valore della funzione obiettivo per tutti i membri della popolazione corrente.
+			\item \emph{Fitness scaling}: i valori calcolati al punto precedente vengono \emph{scalati}, ossia rimappati in modo non lineare, per esigenze dell'operatore di selezione.
+			\item Alcuni membri della popolazione corrente vengono selezionati, in base al valore scalato della funzione fitness, per partecipare alla riproduzione.
+			\item Gli $N_e$ individui migliori (sempre in base alla loro fitness), detti \emph{elite children}, vengono automaticamente promossi a membri della popolazione successiva.
+			\item A partire dagli individui selezionati al punto c (i \emph{genitori}) viene creata la nuova popolazione. I nuovi individui vengono creati per mutazione (\emph{mutation children}) oppure per crossover (\emph{crossover children}).
+			\item La popolazione corrente viene rimpiazzata dagli individui prodotti al punto precedente e dagli \emph{elite children}.
+		\end{enumerate}
+	\item Se una delle condizioni di terminazione è soddisfatta, l'algoritmo si ferma, altrimenti si torna al punto 2.
+\end{enumerate}
+
+Si analizzano ora nei dettagli le varie componenti dell'algoritmo.
+
+\subsection{Fitness scaling}
+La rimappatura delle fitness della popolazione è necessaria per evitare problemi nella successiva fase di selezione. In questa fase, infatti, la probabilità che un individuo ha di essere selezionato sarà in proporzionale al valore della funzione fitness.
+
+Se però i valori della funzione fitness sulla popolazione corrente variano troppo fra di loro, ad esempio se c'è un piccolo gruppo di individui con fitness molto migliore degli altri, si creano degli squilibri, in quanto si riproducono quasi esclusivamente gli individui di quel gruppo. L'informazione genetica contenuta negli altri individui viene quasi sicuramente persa, portando l'algoritmo a convergere prematuramente. Questo comporta una ricerca molto limitata nello spazio delle soluzioni, con conseguenti scarsi risultati finali.
+
+\vspace{0.5 cm}
+
+D'altro canto, se i valori di fitness variano troppo poco all'interno popolazione, tutti gli individui tenderanno a partecipare alla riproduzione, e l'algoritmo si evolverà troppo lentamente.
+
+La strategia scelta è la seguente: si ordinano gli individui in base alla fitness, e poi si assegna al $k$-esimo individuo nella lista ordinata un nuovo valore di fitness proporzionale a $\frac{1}{\sqrt{k}}$. Il coefficiente di proporzionalità viene calcolato in modo che la somma di tutti i nuovi valori di fitness sia uguale al numero totale di genitori necessari per la riproduzione.
+
+Agendo in questo modo si evitano i problemi di cui sopra.
+
+
+
+\subsection{Selezione}
+I valori scalati della funzione fitness vengono ora utilizzati per selezionare gli individui che partecipano alla riproduzione.
+Ogni individuo può partecipare più volte alla riproduzione.
+Escludendo gli $N_e$ individui migliori che vengono promossi a \emph{elite children}, gli altri $N_p - N_e$ individui della nuova popolazione saranno in parte prodotti per crossover, e nella restante parte prodotti per mutazione.
+Il parametro $C_f \in [0,1]$ (\emph{crossover fraction}) specifica appunto qual è la frazione di nuovi individui da produrre per crossover.
+
+Per effettuare il crossover sono necessari due genitori, mentre per la mutazione viene utilizzato un solo genitore.
+
+La scelta dei genitori viene effettuata considerando idealmente una linea divisa in segmenti. Ogni segmento corrisponde ad un individuo, e la sua lunghezza è proporzionale al relativo valore scalato della funzione fitness.
+Scelto un passo, l'algoritmo si muove iterativamente lungo la linea selezionando come genitore l'individuo corrispondente al segmento su cui si ferma.
+
+
+\subsection{Crossover}
+Il crossover è un operatore che associa a due individui genitori un nuovo individuo figlio (\emph{crossover children}) che \emph{eredita} i geni di entrambi, secondo un certo criterio.
+Nel caso in cui il cromosoma sia una stringa di bit, la procedura fa uso di un vettore binario $\boldsymbol{r}$ di dimensione $n$ generato casualmente. Se $\boldsymbol{p^{(1)}}$ e $\boldsymbol{p^{(2)}}$ sono gli individui da ricombinare, allora il nuovo individuo $\boldsymbol{c}$ sarà così definito:
+\begin{equation}
+	c_j = 
+	\begin{cases}
+		p^{(1)}_j & \textmd{se $r_j$ = $1$} \\
+		p^{(2)}_j & \textmd{se $r_j$ = $0$}
+	\end{cases}
+\end{equation}
+
+Nel caso in cui, invece, il cromosoma sia un vettore di numeri reali, la procedura calcola l'individuo figlio come combinazione convessa casuale dei due genitori.
+
+\subsection{Mutazione}
+\label{sec:Mutazione}
+La mutazione è un operatore che associa ad un individuo genitore un nuovo individuo (\emph{mutation children}) che si ottiene dal primo variando in modo casuale i suoi geni.
+La mutazione favorisce la diversità tra gli individui della popolazione e permette all'algoritmo genetico di cercare nello spazio delle soluzioni in modo più vasto.
+
+L'operatore di mutazione qui utilizzato e di tipo \emph{gaussiano}, nel senso che esso muta l'individuo genitore aggiungendo alle sue componenti un rumore gaussiano a media nulla.
+
+La deviazione standard $\sigma_g$ del rumore alla generazione $g$ decresce con il procedere delle generazioni secondo la relazione ricorsiva:
+\begin{equation}
+	\sigma_{g} = \sigma_{g-1} \cdot \left( 1 - \rho \cdot \frac{g}{G_{max}} \right)
+\end{equation}
+
+con $G_{max}$ numero massimo di generazioni (si veda il paragrafo successivo),
+$\rho \in [0,1]$ fattore di restringimento.
+
+Il valore di partenza $\sigma_1$ della deviazione standard è dato da:
+\begin{equation}
+	\sigma_1 = I^u - I^{\ell}
+\end{equation}
+
+dove $[ I^u - I^{\ell} ]$ è l'intervallo in cui vengono generati casualmente i valori per la popolazione iniziale.
+
+Questo operatore di mutazione può essere utilizzato solamente nel caso in cui il problema di ottimizzazione sia non vincolato, altrimenti non è possibile garantire a priori che la mutazione generi ancora un individuo ammissibile. Se l'individuo non è ammissibile va scartato, ma scartarne troppi potrebbe compromettere le prestazioni dell'algoritmo.
+
+Per questo motivo nel caso di problemi vincolati è conveniente utilizzare un operatore di mutazione alternativo progettato apposta per problemi vincolati.
+
+A partire dall'individuo genitore l'operatore alternativo sceglie casualmente una direzione che si adatta a quella dell'ultima generazione (che ha migliorato o meno il valore di fitness).
+Lungo la direzione scelta, percorre un passo casuale che garantisce il rispetto dei vincoli linari imposti.
+
+
+\subsection{Condizioni di terminazione}
+Ponendo $N_e > 0$ si ha la garanzia che il valore della funzione fitness calcolato sul miglior individuo sia una funzione non crescente rispetto alla successione discreta delle iterazioni dell'algoritmo\footnote{Tipicamente sarà $N_e \in \{1,2,3\}$.}.
+
+Poiché l'algoritmo può decrescere(anche lentamente) per miloni di iterazioni, è necessario specificare delle condizioni al verificarsi delle quali conviene (quasi) sicuramente fermare l'esecuzione, perché procedere ulteriormente non migliorerebbe significativamente il risultato.
+
+\vspace{0.5 cm}
+
+In particolare, l'algoritmo termina non appena si verifica una delle seguenti condizioni:
+\begin{itemize}
+	\item Sono state eseguite $G_{max} > 0$ iterazioni. Il parametro $G_{max}$ è solitamente dell'ordine delle centinaia o delle migliaia.
+	\item La media esponenziale pesata della deviazione standard della fitness degli individui scende sotto una certa soglia.
+\end{itemize}
+
+
+\section{Parallelizzazione dell'algoritmo genetico}
+Esistono diversi modi di parallelizzare un algoritmo genetico. Una tassonomia degli algoritmi genetici paralleli è descritta in \cite{tassonomia}.
+
+Il metodo più semplice è il modello master/slave. In questo modello esiste una sola popolazione, ed un nodo di calcolo viene scelto come master, mentre tutti gli altri
+hanno il ruolo di slave. Il master effettua tutte le operazioni richieste dall'algoritmo genetico escluso il calcolo della funzione obiettivo, che è solitamente
+il compito più costosto in termini di tempo di calcolo. Ad ogni iterazione, dunque, il master invia un sottoinsieme della popolazione ad ogni altro nodo di calcolo
+ed attende che tutti i nodi terminino restituendogli i valori delle fitness appena calcolati, per poi andare avanti con l'applicazione degli operatori genetici
+e dunque l'evoluzione alla generazione successiva.
+Questo modello ha il vantaggio di lavorare su un'unica popolazione, gestita dal master, e dunque non differisce minimamente come comportamento dalla versione
+sequenziale, se non per il fatto che il parallelismo può produrre una riduzione del tempo di calcolo. Lo svantaggio è il grosso overhead di comunicazione, giacché
+è necessario che il master invii ad ogni iterazione tutta la popolazione e riceva tutti valori delle funzioni obiettivo.
+Considerando che gli individui potrebbero essere oggetti molto grandi, questo modello può comportare un overhead temporale troppo grande su alcune architetture
+\footnote{Si consideri inoltre che, in generale, l'oggetti da inviare vanno serializzati e quindi la loro dimensione cresce ulteriormente}.
+
+Questo modello è stato scartato perché più adatto ad una architettura basata su memoria condivisa che quindi, per via del bottleneck del bus di memoria, 
+permette solo un limitato livello di parallelismo (\emph{coarse-grained parallelism}).
+
+\vspace{0.5cm}
+
+Un modello più adatto all'architettura a memoria distribuita ibrida propria dell'SCC è invece quello basato sulle sottopopolazioni e la migrazione (\emph{static
+subpopulation with migration}). In questo modello ogni nodo di calcolo gestisce la sua popolazione\footnote{che si può interpretare come sottopopolazione dellapopolazione totale gestita complessivamente da tutti i nodi di calcolo} e ad essa applica l'algoritmo genetico sequenziale descritto nella
+sezione \ref{sez:algGen}, con alcune importanti differenze.
+
+La prima differenza è l'aggiunta di una ulteriore fase dell'algoritmo, detta fase di migrazione, che viene eseguita ogni $M_p$ iterazioni.
+Durante la fase di migrazione, la normale evoluzione degli individui si blocca temporaneamente, ed i nodi di calcolo si scambiano i loro
+individui migliori (il \emph{materiale genetico dominante}), mescolando i propri individui con quelli ricevuti dagli altri.
+Avvenuto lo scambio, l'evoluzione riprende normalmente.
+
+In poche parole, dunque, il calcolo eseguito da un generico nodo si può pensare suddiviso in due fasi che si alternano ciclicamente. Nella fase sequenziale
+il nodo esegue l'algoritmo genetico sequenziale standard in modo completamente isolato dagli altri nodi, come se fosse l'unico nodo nel sistema. 
+Nella fase di migrazione, invece, i nodi scambiano tra di loro i risultati trovati fino a quel punto.
+
+La seconda differenza riguarda le condizioni di terminazione. \'E stato adottato un algoritmo distribuito per decidere di arrestare 
+l'esecuzione\footnote{Si osservi che questo problema non esiste nel modello master/slave, in quanto è il master a decidere
+quando fermare l'esecuzione} prima che sia stato eseguito il massimo numero di migrazioni. Quest'algoritmo è presentato nella sezione \ref{sez:term}.
+
+\vspace{0.5cm}
+
+Mentre il modello master/slave sfrutta il parallelismo senza modificare minimamente l'algoritmo genetico sequenziale\footnote{Purchè l'algoritmo sia implementato
+in maniera riproducibile, infatti, l'esecuzione su una macchina sequenziale da gli stessi ed identici risultati che da su una macchina parallela},
+il modello con sottopopolazioni e migrazione modifica l'algoritmo, perchè l'evoluzione, e quindi l'applicazione degli operatori genetici, non avviene più
+globalmente, ma localmente ai singoli nodi di calcolo.
+
+In altre parole, il modello \emph{static subpopulation with migration} scelto per l'implementazione è un vero e proprio algoritmo distribuito,
+più che algoritmo parallelo, e può essere adattato ad un qualsiasi tipo di sistema di calcolo distribuito (ad esempio una tradizionale rete di calcolatori).
+
+
+\section{Schema di migrazione}
+Un aspetto che bisogna precisare una volta scelto il modello di parallelizzazione basato su migrazione è proprio lo schema di migrazione. In altri termini è 
+necessario descrivere dove sono diretti i flussi di migrazione, ossia lo schema di scambio di messaggi. Lo schema deve essere compatibili con il modello
+di scambio di messaggi disponibile (in questo caso la libreria RCCE).
+
+La soluzione adottata prevede la ricerca, nel grafo dei nodi di calcolo, di un ciclo orientato contenente tutti i nodi di calcolo disponibili.
+Un tale ciclo è noto nella teoria dei grafi come \emph{ciclo hamiltoniano}.
+In altri termini lo schema di migrazione si basa su un unico flusso circolare unidirezionale di individui. \'E possibile scegliere schemi più complessi, con più
+flussi che coinvolgono uno stesso nodo. Bisogna tuttavia prestare attenzione alla possibilità che si verifichino situazioni di stallo, cosa che non
+può mai avvenire con un unico flusso circolare.
+
+\subsection{Schema di comunicazione}
+Come scelta progettuale, la fase di migrazione non prevede lo scambio di informazioni tra tutte le coppie di nodi possibili.
+Ogni nodo, infatti, propaga la frazione $M_f$ (che l'utente è libero di specificare) della propria popolazione composta dagli individui migliori al nodo successivo
+nel ciclo. Se $N$ è il numero di nodi di calcolo del sistema, dunque, sono necessarie $N$ fasi di migrazione perchè il materiale genetico scambiato si propaghi
+lungo tutto il ciclo. Essendo il numero iterazioni (e quindi il numero di migrazioni) tipicamente molto alto (i.e. $10000$), ciò non costituisce in realtà un problema.
+
+L'utilizzo di uno schema circolare molteplici vantaggi, primo fra tutti la semplicità. Considerato inoltre che la libreria RCCE fornisce primitive di comunicazione
+bloccanti, il flusso circolare permette di gestire in modo semplice, elegante ed efficiente la circolazione delle informazioni, cosa che non avverrebbe in uno schema
+più complicato.
+
+Più precisamente, durante una fase di migrazione ogni nodo esegue esattamente una operazione di \texttt{send} sul nodo successivo nel ciclo, ed un'operazione di
+\texttt{receive} sul nodo precedente. L'ordine delle operazioni dipende dalla posizione del nodo nel cammino\footnote{Se un nodo effettua prima
+la \texttt{receive} che la \texttt{send}, non invia al nodo successivo ciò che ha appena ricevuto dal nodo precedente.}.
+A questo scopo, effettuiamo una colorazione del grafo con due colori, rosso e nero.
+Ad ogni nodo di calcolo associamo un identificatore, che è un numero intero appartenente al range \{$0,N-1$\}, dove $N$ è il numero totale di nodi. A livello
+implementativo, l'identificatore di un core (nodo) corrisponderà esattamente all'identificatore (rank) che RCCE assegna all'unità di esecuzione supportata dal core.
+Ad ogni nodo di calcolo è inoltre associato un numero d'ordine, anch'esso compreso tra $0$ ed $N-1$, che specifica l'ordine del nodo nel ciclo hamiltoniano\footnote{Trattandosi un ciclo non avrebbe tanto senso parlare di un \emph{primo} nodo, ma se ne sceglierà uno per convenzione.}.
+Il numero d'ordine viene calcolato dall'algoritmo di ricerca del ciclo hamiltoniano descritto successivamente.
+Un nodo viene colorato di rosso se il suo numero d'ordine è pari, altrimenti viene colorato di nero.
+I nodi colorati di rosso eseguono prima la \texttt{send} sul nodo successivo e poi la \texttt{receive} sul nodo precedente. Viceversa, i nodi colorati di nero
+eseguono prima la \texttt{receive} sul nodo precedente e poi la \texttt{send} sul nodo successivo.
+In questo modo, se i nodi sono in numero pari, la fase di migrazione avviene in due passi. Nel primo passo i nodi rossi inviano i propri individui migliori 
+ai nodi neri loro successivi, per un totale di N/2 trasferimenti che avvengono in parallelo (minimizzando le attese). Nel secondo passo i nodi neri inviano
+i propri individui migliori ai nodi rosse loro successivi, per un totale di N/2 trasferimenti paralleli. La situazione è mostrata nelle figure \ref{fig:migrPari1}
+e \ref{fig:migrPari2}.
+
+\begin{figure}[bt]
+\centering
+\includegraphics[scale = 0.45]{migrPari1.png}
+\caption{ Primo passo di migrazione nel caso di numero pari di nodi. I numeri indicati sui nodi sono i numeri d'ordine. }
+\label{fig:migrPari1}
+\end{figure}
+
+\begin{figure}[bt]
+\centering
+\includegraphics[scale = 0.45]{migrPari2.png}
+\caption{ Secondo passo di migrazione nel caso di numero pari di nodi. I numeri indicati sui nodi sono i numeri d'ordine. }
+\label{fig:migrPari2}
+\end{figure}
+
+Se invece il numero di nodi è dispari cambia solo il comportamento dell'ultimo nodo del ciclo (quello con numero d'ordine $N-1$), che sarà un nodo rosso, e del
+penultimo, che sarà un nodo nero.
+Durante il primo passo, infatti, l'ultimo nodo del ciclo eseguirà la \texttt{send} sul primo nodo del ciclo (anch'esso rosso), ma dovrà attendere che quest'ultimo
+termini la \texttt{send} a sua volta invocata sul secondo nodo del ciclo. Il primo passo dell'ultimo nodo sarà di fatto temporalmente coincidente con il secondo
+passo del primo nodo (e quindi di tutti i primi N-2 nodi). Analogamente, nel suo secondo passo, il penultimo nodo dovrà attendere che avvenga il trasferimento
+tra l'ultimo nodo ed il primo, per poi effettuare il trasferimento con l'ultimo.
+In altri termini, pur non cambiando nulla dal punto di vista logico, nel caso di nodi pari la fase di migrazione avviene approssimativamente nel tempo necessario
+ad effettuare due trasferimenti tra nodi successivi (supponendo momentaneamente che i trasferimenti abbiano tutti lo stesso costo), mentre nel caso di nodi dispari
+è necessario un tempo pari a tre trasferimenti tra nodi successivi, perchè non tutti i trasferimenti possono avvenire in parallelo.
+
+Si noti che la scelta di uno schema di migrazione non circolare comporterebbe difficoltà nello schema delle chiamate bloccanti, con conseguente perdita di 
+parallelismo delle comunicazioni (un nodo potrebbe essere costretto ad aspettare che il suo corrispondente esegua un'altra cominicazione con un nodo differente).
+
+Nella sottosezione seguente si descriverà come scegliere un ciclo hamiltoniano \emph{bilanciato}, ossia tale che il costo per il trasferimento di un messaggio tra due
+core consecutivi nel ciclo sia approssimativamente uguale per tutte le coppie di nodi consecutivi.
+
+Nel caso dell'SCC, si assumerà come costo di trasferimento tra due core il numero di hop che separano il core ricevente dal core trasmittente, poiché tutti i
+messaggi hanno la stessa dimensione. Si ricorda che il routing effettuato dalla mesh è un semplice routing x-y.
+
+
+\subsection{Ricerca di cicli hamiltoniani}
+La ricerca di un ciclo hamiltoniano in un grafo, in generale, è un problema intrattabile.
+In questo caso, in realtà, la soluzione del problema è di per sè immediata, in quanto ogni core dell'SCC può comunicare con tutti gli altri core.
+Si tratta di un grafo completamente connesso, e per questo motivo ogni permutazione dei nodi di calcolo è un ciclo hamiltoniano.
+
+Ciononostante non è conveniente scegliere un ciclo in modo causale, ma conviene sfruttare la topologia e le simmetrie della mesh, cercando per quanto possibile
+di far prevalere comunicazione tra nodi vicini, possibilmente all'interno dello stesso tile.
+
+In generale, l'applicazione può avere a disposizione un sottoinsieme qualsiasi dei 48 core, ed è dunque necessario delineare una procedura generale per la
+ricerca di un cammino hamiltoniano favorevole.
+
+La scelta che è stata fatta per eseguire in modo relativamente semplice la ricerca è la seguente:
+\begin{itemize}
+	\item trattare separatamente alcuni casi particolarmente favorevoli per cui è possibile trovare la soluzione ottima in modo semplice
+	\item nel caso generale utilizzare un'euristica semplice, ma che in pratica porta a risultati accettabili
+\end{itemize}
+
+Per non appesantire troppo l'implementazione, non sono stati trattati separatamente alcuni casi favorevoli leggermente più complicati
+\footnote{Sarebbe comunque semplice estendere il lavoro per trattare anche questi casi}.
+
+Definiamo la \emph{matrice di disponibilità} dell'SCC come una matrice avente 8 righe e 6 colonne che ricalca la struttura della mesh. Ogni elemento
+della matrice di disponibilità corrisponde al core che nella mesh ha la stessa posizione.
+Se il core in posizione $(i,j)$ nella mesh è disponibile per la computazione, allora l'elemento $(i,j)$ della matrice di disponibilità contiene
+l'identificatore (rank) di tale core. In caso contrario, l'elemento $(i,j)$ contiene l'elemento $-1$.
+Gli indici di riga e colonna sono numerati a partire da $0$.
+Chiameremo \emph{disponibile} un elemento della matrice $(i,j)$ se quell'elemento è maggiore di $-1$ (e quindi se il core corrispondente è disponibile
+per supportare un'unità di esecuzione dell'applicazione).
+
+Viene fatto un primo semplice test per verificare se la matrice di disponibilità contiene un'unica sottomatrice rettangolare (di dimensioni qualsiasi)
+contenente solo elementi disponibili. Se il test ha risultato positivo, si cercano cammini ottimali, altrimenti si applica l'algoritmo generale
+\footnote{Si potrebbe estendere il test a casi in cui ci sono più sottomatrici quadrate di soli elementi disponibili}.
+
+L'algoritmo generale consiste nello scandire la matrice di disponibilità per colonne nel modo indicato in figura \ref{fig:genPath}
+e selezionare solamente gli elementi disponibili, aggiungendoli al cammino man mano che si incontrano.
+
+\begin{figure}[bt]
+\centering
+\includegraphics[scale = 0.45]{genPath.png}
+\caption{ Percorso seguito dall'algoritmo generale }
+\label{fig:genPath}
+\end{figure}
+
+\vspace{0.5cm}
+
+Supponiamo ora che il test precedente abbia dato risultato positivo.
+Nel caso in cui la sottomatrice individuata sia una matrice riga (colonna), la soluzione ottima, comunque poco bilanciata, prevede che l'ordine
+del ciclo segua esattamente la riga (colonna) individuata.
+
+Poniamoci adesso nel caso più generale in cui la sottomatrice individuata abbia un numero di righe e colonne strettamente maggiore dell'unità.
+Di stinguiamo i casi seguenti:
+\begin{enumerate}
+	\item Se la sottomatrice ha un numero dispari di righe ed un numero dispari di colonne, non è sempre possibile trovare un ciclo perfettamente
+		  bilanciato, ma si è costretti ad accettare la presenza di un trasferimento che ha costo maggiore degli altri\footnote{Potrebbe comunque
+		  verificarsi il caso favorevole in cui tale comunicazione ha lo stesso costo delle altre, in quanto effettuata tra due tiles adiacienti}. Il ciclo scelto è
+		  evidenziato in figura \ref{fig:oddPath}, nel caso di una sottomatrice 5x7.
+	\item Se la sottomatrice ha un numero di righe pari e maggiore di quattro, ha un numero di righe dispari, e se il più piccolo indice di 
+		  riga corrispondente a elementi disponibili nella matrice è pari, si può seguire il percorso
+		  indicato in figura \ref{fig:verticalTilesPath}, che ha il vantaggio di comportare solo comunicazioni intra-tile nel primo passo
+		  della fase di migrazione e solo comunicazioni inter-tile (dallo stesso costo) nel secondo passo\footnote{Si osservi che in questo caso
+		  il numero di nodi è pari}. Si ottiene così una soluzione perfettamente bilanciata.
+	\item Se la sottomatrice ha un numero di righe multiplo di quattro, un numero di colonne maggiore di due, e se il più piccolo indice di 
+		  riga corrispondente a elementi disponibili nella matrice è pari, allora si può seguire il percorso rappresentato in figura
+		  \ref{fig:horizontalTilesPath}, che ha le stesse proprietà del ciclo scelto al punto precedente.
+	\item Se non valgono i casi 2 e 3, e la sottomatrice ha un numero pari di colonne ed un numero di righe maggiore o uguale di due, è
+		  possibile seguire un ciclo del tipo rappresentato in figura \ref{fig:verticalPath}.
+	\item Se non valgono i casi 2 e 3, e la sottomatrice ha un numero pari di righe ed un numero di colonne maggiore o uguale di due, è
+		  possibile seguire un ciclo del tipo rappresentato in figura \ref{fig:horizontalPath}.
+\end{enumerate}
+
+\begin{figure}[bt]
+\centering
+\includegraphics[scale = 0.45]{oddPath.png}
+\caption{ Ciclo scelto nel caso di sottomatrice con numero dispari di elementi. In verde è evidenziata la comunicazione in generale più lenta rispetto alle altre. }
+\label{fig:oddPath}
+\end{figure}
+
+\begin{figure}[bt]
+\centering
+\includegraphics[scale = 0.45]{verticalTilesPath.png}
+\caption{ Ciclo scelto nel caso 2 }
+\label{fig:verticalTilesPath}
+\end{figure}
+
+\begin{figure}[bt]
+\centering
+\includegraphics[scale = 0.45]{horizontalTilesPath.png}
+\caption{ Ciclo scelto nel caso 3 }
+\label{fig:horizontalTilesPath}
+\end{figure}
+
+\begin{figure}[bt]
+\centering
+\includegraphics[scale = 0.45]{verticalPath.png}
+\caption{ Ciclo scelto nel caso 4 }
+\label{fig:verticalPath}
+\end{figure}
+
+\begin{figure}[bt]
+\centering
+\includegraphics[scale = 0.45]{horizontalPath.png}
+\caption{ Ciclo scelto nel caso 5 }
+\label{fig:horizontalPath}
+\end{figure}
+
+
+\section{Algoritmo distribuito di terminazione}
+\label{sez:term}
+Come ultima questione, bisogna stabilire in che modo i nodi di calcolo devono coordinarsi per stabilire di fermare l'esecuzione prima che il numero
+massimo di iterazioni sia stato raggiunto. Nel caso sequenziale, quando l'algoritmo converge ad una soluzione (ossia quando gli individui tendono ad uniformarsi
+completamente), è sufficiente interrompere l'evoluzione e terminare l'esecuzione.
+
+Nel caso parallelo, a causa della migrazione, ci sono tante popolazioni (una per ogni nodo), ed ogni nodo valuta indipendentemente dagli altri la condizione di
+convergenza. Di conseguenza, i nodi possono decidere di essere arrivati a convergenza in iterazioni differenti, in modo sostanzialmente non prevedibile.
+
+Inoltre, se un nodo decide che non ha più senso continuare l'evoluzione, non può semplicemente terminare l'esecuzione, perchè i nodi adiacenti (i quali potrebbero
+non aver ancora deciso di fermarsi) effettuano delle chiamate bloccanti su di esso: si arriverebbe così ad una situazione di stallo. Detto in altri termini, una fase di 
+migrazione deve essere eseguita da tutti i nodi oppure da nessun nodo, altrimenti si raggiunge sicuramente una situazione di stallo.
+
+Infine, quando tutti hanno terminato, è necessario raccogliere le soluzioni locali a ciascun nodo, cosa che può essere fatta da un solo nodo designato appositamente.
+In ogni caso, dunque è necessario che i tutti i nodi raggiungano un punto di sincronizzazione finale.
+
+\vspace{0.5cm}
+
+Per questi motivi, l'algoritmo di terminazione distribuita è stato concepito in maniera tale che l'evoluzione termini per tutti i nodi esattamente alla
+stessa iterazione, dopo che tutti i nodi, tramite un semplice protocollo di segnalazione, abbiano deciso di comune accordo di voler terminare.
+
+Allo scopo di non appesantire le comunicazioni, il protocollo di segnalazione agisce solamente durante le fasi di migrazione\footnote{Infatti, anche se
+protocollo di segnalazione ha bisogno di trasmettere un solo byte, la trasmissione di un messaggio da un core all'altro comporta comunque un overhead
+dovuto alla sincronizzazione, soprattutto a causa delle attese attive}. Più in dettaglio, un byte aggiuntivo
+viene posto in coda al messaggio contentente il materiale genetico da propagare verso i nodi successivi. Questo byte contiene l'informazione necessaria al nodo
+per decidere come agire.
+
+I segnali si trasferiscono nel ciclo muovendosi alla velocità di due nodi per migrazione. Infatti il nodo rosso avente numero d'ordine $i$
+invia nel primo passo di una fase di migrazione un messaggio al nodo nero avente numero d'ordine $i+1$, il quale durante il secondo passo della stessa fase
+di migrazione invia un altro messaggio (il cui byte di segnalazione tiene conto del messaggio appena ricevuto dal nodo $i$) al nodo rosso avente
+numero d'ordine $i+2$.
+
+\vspace{0.5cm}
+
+Quando nessun nodo è ancora arrivato a convergenza, il byte del protocollo di segnalazione viene impostato con un segnale (\texttt{K}) che indica al nodo 
+successivo di continuare tranquillamente l'evoluzione.
+
+Quando un nodo converge, per esso comincia la prima fase dell'algoritmo di terminazione. Il nodo arrivato a convergenza segnala al nodo successivo la sua volontà di fermarsi,
+inviandogli il segnale \texttt{S}, ma solamente se anche il nodo precedente gli ha a sua volta già inviato (in passato) tale segnale, avendo espresso la stessa volontà.
+Perché questa condizione si verifichi prima o poi per tutti i nodi, è chiaramente necessario prevedere l'esistenza di un nodo coordinatore, che non appena arrivato a convergenza
+invii \texttt{S} al nodo successivo il segnale \texttt{S} senza attendere oltre. In questo modo, quando il nodo coordinatore riceve il segnale \texttt{S}, è sicuro
+che tutti i nodi nel sistema sono arrivati a convergenza ed hanno deciso di essere pronti a fermarsi.
+
+\vspace{0.5 cm}
+
+A questo punto comincia la seconda fase dell'algoritmo, la
+fase di \emph{countdown}.
+Questa fase, inaugurata ancora una volta dal nodo coordinatore (l'unico che può essere sicuro che la decisione di terminare l'evoluzione sia stata presa
+unanimemente), ha lo scopo di far terminare tutti i nodi esattamente durante la stessa iterazione, in modo tale che non possano nascere situazioni di stallo
+dovute a fasi di migrazioni eseguite solo da un sottoinsieme dei nodi.
+
+A questo scopo, il nodo coordinatore imposta un contatore locale ad un certo valore (specificato di seguito) ed invia al nodo successivo il segnale \texttt{C},
+che indica l'inizio della fase di countdown. Un nodo che riceve il segnale \texttt{C} lo trasmette appena possibile al suo nodo successivo, impostando a sua volta
+un contatore locale ad un certo valore.
+Ad ogni fase di migrazione successiva a quella in cui è stato impostato, il contatore viene decrementato.
+Il valore iniziale del contatore varia da nodo a nodo, e dipende solamente dal numero d'ordine del nodo. Questo valore deve essere calcolato in modo tale che il
+contatore raggiunga il valore zero per tutti i nodi esattamente nella stessa iterazione. In questo modo, quando un nodo si accorge che il proprio contatore è
+arrivato a zero, può terminare in tutta sicurezza l'evoluzione.
+
+Si può verificare facilmente che, per il nodo avente numero d'ordine $i$ il contatore deve essere impostato al valore
+\begin{equation}
+	\lfloor   \frac{ 2 \lfloor \frac{N}{2} \rfloor - i }{2}  \rfloor
+\end{equation}
+
+Le figura \ref{fig:machineNormal} rappresenta in modo schematico la macchina a stati che esprime l'algoritmo di terminazione per quanto riguarda un nodo
+non coordinatore.
+Sugli archi che rimangono sullo stesso stato sono indicate le operazioni effettuate dal nodo quando si trova in quello stato. L'operazione \texttt{signal(X)} indica
+l'invio di un segnale al nodo successivo (protocollo di segnalazione). Sugli archi che collegano due stati distinti sono presenti nomi di segnali o la variabile
+di stato \texttt{readyToStop}. Un nome di segnale X indica l'evento `ho ricevuto in passato il segnale X dal mio nodo precedente`, mentre la variabile \texttt{readyToStop}
+viene settata quando un nodo arriva a convergenza.
+
+Analogamente, la figura \ref{fig:machineCoord} rappresenta la macchina a stati che esprime l'algoritmo di terminazione relativo al nodo coordinatore.
+
+\begin{figure}[bt]
+\centering
+\includegraphics[scale = 0.45]{machineNormal.png}
+\caption{ Macchina a stati per l'algoritmo di terminazione relativa ad un nodo non coordinatore }
+\label{fig:machineNormal}
+\end{figure}
+
+\begin{figure}[bt]
+\centering
+\includegraphics[scale = 0.45]{machineCoord.png}
+\caption{ Macchina a stati per l'algoritmo di terminazione relativa al nodo coordinatore }
+\label{fig:machineCoord}
+\end{figure}
+
+
+\section{Raccolta dei risultati}
+\label{sez:raccolta}
+Una volta terminata l'evoluzione, bisogna raccogliere i risultati. A questo scopo un nodo di calcolo viene scelto per effettuare questo compito. Per
+convenzione si sceglie il nodo avente identificatore 0. Il nodo 0 invoca, in sequenza, una \texttt{receive} su ogni altro nodo. Ogni nodo con 
+identificatore maggiore di zero, d'altra parte, effettua una \texttt{send} inviando al nodo 0 il suo individuo con fitness più alta.
+In questo modo il nodo 0 può calcolare la soluzione globale e restituirla al chiamante (la sezione \ref{sez:interf} specifica l'interfaccia offerta dal
+framework).
+
+
+
+\chapter{Interfaccia ed implementazione}
+In questo capitolo viene presentata l'interfaccia che il framework di ottimizzazione fornisce all'utente e vengono
+esposti alcuni dettagli implementativi del framwork stesso.
+
+\section{Interfaccia}
+\label{sez:interf}
+Il framework è stato implementato sull'SCC utilizzando la libreria RCCE. Poichè la libreria RCCE adotta il paradigma 
+\emph{Single Program Multiple Data} (SPMD), anche l'utente deve attenersi allo stesso paradigma.
+
+Ciononostante, questo non comporta praticamente nessun disagio o difficoltà per l'utente inesperto nel momento in cui egli compila
+un programma che si limita ad utilizzare il framework per effettuare una qualsiasi ottimizzazione.
+\'E pertanto sufficiente seguire le istruzioni riportate di seguito.
+
+\vspace{0.5cm}
+
+Creato un file sorgente C++ contenente la funzione \emph{main}, è necessario includere l'header `ga.h`.
+Prima di creare gli oggetti necessari per impostare l'algoritmo, è necessario eseguire la chiamata di funzione
+\texttt{GAUtils::frameworkInit( \&argc, \&argv )}, che inizializza il framework passando a RCCE i parametri passati
+dalla linea di comando\footnote{Una volta compilato il sorgente, si deve lanciare l'eseguibile utilizzando l'utilità
+\texttt{rccerun}, il cui funzionamento è descritto in \cite{SCCprogrammers}}.
+
+Una volta fatto questo, è necessario creare un oggetto della classe template \texttt{GeneticAlgorithm}. Il primo parametro
+template (IT) specifica la classe (o il tipo primitivo) che la funzione obiettivo da minimizzare accetta in ingresso, mentre il
+secondo (OT) specifica il tipo di primitivo che la funzione restituisce in uscita. Il secondo parametro può essere solo uno
+tra \texttt{float}, \texttt{double} o \texttt{int}, in quanto la minimizzazione è mono-obiettivo (questo vincolo non impone perdita
+di generalità).
+Il costruttore della classe \texttt{GeneticAlgorithm} prende in ingresso quattro parametri:
+\begin{enumerate}
+	\item Il puntatore alla funzione obiettivo da ottimizzare. La funzione deve restituire un oggetto di tipo \texttt{OT} e deve
+		  accettare in ingresso un riferimento a costante di tipo \texttt{IT} (\texttt{const IT\&}).
+	\item Il puntatore alla funzione che implementa l'operatore di mutazione. Tale funzione non ha valore di ritorno, ed accetta
+	      due parametri in ingresso, il primo di tipo (\texttt{const IT\&}) ed il secondo di tipo (\texttt{IT\&}). Il primo parametro
+		  si riferisce all'individuo a cui l'operatore deve essere applicato, mentre il secondo si riferisce appunto all'individuo da 
+		  creare per mutazione a partire dal primo.
+	\item Il puntatore alla funzione che implementa l'operatore di crossover. Tale funzione non ha valore di ritorno, ed accetta
+	      tre parametri in ingresso, i primi due di tipo (\texttt{const IT\&}) ed il terzo di tipo (\texttt{IT\&}). Il primi due parametri
+		  si riferiscono agli individui genitori a cui l'operatore deve essere applicato, mentre il terzo si riferisce all'individuo figlio da 
+		  creare per crossover a partire dai primi due.
+	\item Un valore di un tipo enumerazione che specifica l'operatore di selezione. Attualmente è implementato solo l'algoritmo \emph{Stochastic
+		  Universal Sampling}, dovuto a \cite{Baker}, che si specifica con il tipo enum \texttt{GAUtils::SUS}.
+\end{enumerate}
+
+Il framework fornisce degli operatori generici già disponibili che possono essere utilizzati con i tipi di ingresso \texttt{float}, \texttt{double},
+\texttt{FloatVector} e \texttt{DoubleVector}\footnote{I tipi \texttt{FloatVector} e \texttt{DoubleVector} sono rispettivamente di vettori di
+\texttt{float} e vettori di \texttt{double}, ed hanno la stessa interfaccia della classe \texttt{vector} di STL}.
+
+Gli operatori di mutazione già disponibili sono
+\begin{itemize}
+	\item \texttt{GAUtils::mutationGaussian} - Crea l'individuo mutante sommando all'individuo da mutare un rumore Gaussiano a media nulla ed a varianza
+		  che decresce con l'aumentare del numero di iterazioni.
+\end{itemize}
+
+Gli operatori di crossover già disponibili sono
+\begin{itemize}
+	\item \texttt{GAUtils::crossoverConvex} - Crea l'individuo figlio come combinazione lineare convessa degli individui genitori. In formula,
+		  seleziona un numero casuale $\beta$ compreso tra $0$ e $1$ e pone $children = \beta \cdot parent_1 + (1-\beta) \cdot parent_2$.
+	\item \texttt{GAUtils::crossoverScattered} - L'i-esima componente dell'individuo figlio viene scelta causalmente tra la i-esima componente
+		  del primo genitore e la i-esima componente del secondo genitore.
+\end{itemize}
+
+Per utilizzare gli operatori già disponibili è sufficiente specificare il valore di tipo enum riportato nei precedenti due elenchi
+(i.e. \texttt{GAUtils::crossoverConvex} ) al posto del corrispondente puntatore a funzione.
+
+Sempre per quanto riguarda i tipi suindicati, il framework fornisce infine la possibilità di generare popolazioni iniziali in modo casuale.
+Per i tipi \texttt{float} e \texttt{double} è possibile invocare, sull'oggetto creato precedentemente, la funzione
+\texttt{G.gaUtils.generate( population\_size, initial\_population, lower\_bound, upper\_bound )}, che accetta in ingresso un intero che indica la dimensione 
+della popolazione da creare, un \texttt{vector<IT>} in cui verrà costruita la popolazione iniziale ed infine due float che specificano rispettivamente
+il limite inferiore ed il limite superiore dell'intervallo monodimensionale a cui gli individui generati devono appartenere.
+
+In modo analogo per i tipi \texttt{FloatVector} e \texttt{DoubleVector} è possibile invocare la funzione
+\texttt{G.gaUtils.generate( population\_size, initial\_population, lower\_bounds, upper\_bounds )}, che accetta in ingresso un intero che indica la dimensione 
+della popolazione da creare, un \texttt{vector<IT>} in cui verrà costruita la popolazione iniziale ed infine due \texttt{vector<float>} che specificano
+rispettivamente i limiti inferiori ei superiori dell'intervallo multidimensionale a cui gli individui generati devono appartenere.
+
+\vspace{0.5cm}
+
+A questo punto è possibile invocare sull'oggetto algoritmo genetico il metodo \texttt{run} che lancia l'algoritmo genetico stesso. Questa funzione ritorna
+un valore di tipo \texttt{IT}, che è la soluzione trovata dall'algoritmo. Poichè il framework va utilizzato secondo il paradigma SPMD, in realtà ogni core esegue una
+sua chiamata alla funzione \texttt{run}, e ritorna un proprio valore. Come specificato nella sezione \ref{sez:raccolta}, il nodo con identificatore 0 raccoglie i
+risultati e dunque e proprio quest'ultimo che ritorna la soluzione globale. Gli altri nodi ritornano la loro soluzione locale (che in genere non interessa).
+Per questo motivo la classe \texttt{GeneticAlgorithm} dispone di una funzione \texttt{IamMaster()} che ritorna il valore booleano \texttt{true} quando chiamata
+sul core avente identificatore 0. In questo modo l'utente può correttamente selezionare la soluzione globale.
+
+La funzione \texttt{run} accetta in ingresso i seguenti parametri
+\begin{enumerate}
+	\item Un riferimento ad una costante di tipo vector<IT>, che specifica la popolazione iniziale da cui l'algoritmo genetico parte.
+	\item Un intero che indica il massimo numero di iterazioni che possono essere eseguite prima di terminare. Valore di default = 100.
+	\item Un float compreso tra 0.0 ed 1.0 che specifica la frazione di crossover (\emph{crossover fraction}). Valore di default = 0.8.
+	\item Un intero positivo che specifica il numero di elite children. Valore di default = 3.
+	\item Un float compreso tra 0.0 ed 1.0 che specifica la frazione di individui della popolazione corrente che vengono propagati da
+		  ogni nodo verso il suo successivo durante una fase di migrazione. Valore di default = 0.1.
+	\item Un intero positivo che specifica il periodo di migrazione, ossia il numero di iterazioni che intercorrono tra due fasi di migrazione successive.
+\end{enumerate}
+
+Poichè i metodi della classe \texttt{GeneticAlgorithm} possono sollevare eccezioni di tipo \texttt{GAError}, è necessario utilizzare il costrutto \texttt{try-catch}.
+
+
+\section{Implementazione}
+Come già accennato in precedenza, il framework è stato implementato facendo uso dei template C++, per permettere all'utente di effettuare minimizzazioni
+di funzioni obiettivo il cui ingresso è qualsiasi.
+
+Lavorando con i template, non potendo contare sulla keyword C++ \texttt{export}, il framework è quasi completamente contenuto in due header file,
+il file `ga.h` (incluso dall'utente) ed il file `gaUtils.h`.
+Il primo include il secondo, e contiene la definizione della classe \texttt{GeneticAlgorithm} (la classe principale) e quindi implementa il cuore dell'algoritmo.
+Nell'header `ga.h` sono implementate anche le macchine a stati relative all'algoritmo distribuito di terminazione. Per motivi legati all'implementazione
+è stato necessario creare due versioni di macchine a stati differenti per nodi di colore diverso, oltre alla differenza che esiste tra il nodo coordinatore
+e gli altri nodi.
+Il secondo header contiene le definizioni degli operatori genetici già disponibili e le funzioni per generare le popolazioni iniziali, per i quattro tipi indicati
+nella sezione precedente.
+
+Per generare numeri random con con distribuzione uniforme e gaussiana sono state usate delle librerie liberamente scaricabili sul sito
+http://www.agner.org/. Il modulo per la generazione di numeri random con distribuzione uniforme è disponibile come libreria statica (`randomaelf32.a`), 
+mentre il modulo che genera numeri con distribuzioni non uniforme (utilizzando la libreria statica precedente) è disponbile come sorgente C++ (`stoc1.cpp`).
+
+Un aspetto importante del progetto è l'indipendenza del framework dalla libreria usata per la comunicazione (in questo caso RCCE), e quindi dall'intera
+architettura (in questo caso SCC).
+La libreria per la comunicazione è infatti racchiusa nel modulo `mesh2D`, separato dal resto del framework. Questo modulo può avere bisogno 
+di essere inizializzato (è il caso di RCCE), ma non lascia trasparire all'esterno il modo in cui questo avviene.
+Il suo scopo è sostanzialmente quello di fornire alla classe principale un'interfaccia che permette di trasmettere/ricevere ad/da un altro nodo, specificandone
+l'identificatore, un certo insieme di byte (senza interpretarli). Inoltre deve effettuare il calcolo del ciclo hamiltoniano\footnote{Il calcolo dipende 
+in generale dall'architettura} e dunque restituire al nodo chiamante i suoi parametri di configurazione nella mesh: il suo identificatore, il suo numero
+d'ordine, il suo colore, l'identificatore del nodo che lo precede nel ciclo, l'identificatore del nodo che ad esso segue. Note queste informazioni,
+l'algoritmo genetico parallelo descritto nel capitolo precedente ha tutto ciò che occorre per il funzionamento.
+
+Come conseguenza diretta dell'indipendenza da architettura e libreria, è possibile, cambiando l'implementazione del modulo `mesh2D`, far girare l'algoritmo
+su una tradizionale rete di calcolatori, ad esempio attraverso l'uso dei socket. Ovviamente in quest'ultimo caso può diventare problematica la ricerca di un
+ciclo hamiltoniano sufficienetemente bilanciato, a meno che esso non venga impostato staticamente, cosa che può avvenire ad esempio in un cluster di calcolatori
+connessi via LAN ad alta velocità.
+
+\vspace{0.5cm}
+
+Il core dell'algoritmo utilizza due array di oggetti di tipo \texttt{IT}. Il primo array contiene la popolazione corrente\footnote{All'inizio dell'algoritmo
+viene inizializzato con la popolazione iniziale passata dall'utente}, mentre il secondo viene gradualmente costruito durante l'iterazione attraverso l'applicazione
+degli operatori genetici agli individui contenuti nel primo array. Alla fine dell'iterazione i due array vengono scambiati con un semplice scambio di
+puntatori.
+
+Per diversi motivi è necessario ordinare gli individui per fitness ad ogni iterazione. Ad esempio durante la selezione bisogna associare agli individui che
+hanno una migliore fitness una più alta probabilità di riprodursi (per mutazione o ricombinazione). Nelle fasi di migrazioni, inoltre, bisogna trasmettere al nodo
+successivo gli individui con la fitness più altra.
+
+A questo scopo è stato implementato un heap binario di massimo\footnote{Anche se la funzione viene minimizzata, si utilizza un heap di massimo a causa
+del fitness scaling, che mappa gli individui con fitness più bassa in valori scalati maggiori, in modo che l'individuo migliore si trovi ad avere
+il valore di fitness scalato più grande di tutti e così via}, che in ogni iterazione viene riempito con un inserimento alla volta dagli individui della
+popolazione corrente (man mano che viene calcolata la loro fitness), e che viene svuotato in modo brusco alla fine dell'iterazione, in modo da poter essere
+riempito nuovamente alla iterazione successiva.
+
+
+
+
+\chapter{Risultati sperimentali}
+Allo scopo di testare il funzionamento dell'algoritmo e verificare i vantaggi dell'elaborazione parallela, sono stati effettuati alcuni test su un problema di ottimizzazione che richiede una notevole quantità di calcoli.
+
+Il problema scelto consiste nell'addestramento una rete neurale feed-forward a due strati con un ingresso, quattro neuroni nascosti ed una uscita. La funzione di attivazione dei neuroni nello strato nascosto è di tipo sigmoidale, mentre quella dell'unico neurone nello strato di uscita è lineare.
+
+I dataset scelti sono costituiti da 50 elementi. Ai fini dell'ottimizzazione, i dataset sono stati mappati linearmente sull'intervallo [-1,1]. La funzione obiettivo da minimizzare è la deviazione standard dell'errore di approssimazione sugli elementi del dataset.
+
+\vspace{0.5cm}
+
+Nei test effettuati sono stati utilizzate popolazioni di dimensione variabile tra 15 e 200, utilizzando un numero di core progressivamente crescente.
+La popolazioni iniziali sono state inizializzate in modo casuale scegliendo i valori reali in un intervallo simmetrico centrato nell'origine.
+
+Per quanto riguarda gli altri parametri dell'algoritmo genetico, i valori scelti sono riportati nella tabella di figura \ref{fig:tabpar}.
+
+\begin{figure}[bt]
+\centering
+\includegraphics[scale = 0.65]{tabpar.png}
+\caption{ Parametri dell'algoritmo genetico utilizzati. }
+\label{fig:tabpar}
+\end{figure}
+
+
+
+\section{Dataset 1}
+Il primo dataset su cui è stata effettuata l'ottimizzazione è riportato in figura \ref{fig:d1} (in cui i punti del dataset sono stati congiunti con delle spezzate).
+
+\begin{figure}[bt]
+\centering
+\includegraphics[scale = 0.35]{dataset1.png}
+\caption{ Dataset 1 }
+\label{fig:d1}
+\end{figure}
+
+I risultati ottenuti sono mostrati nella tabella di figura \ref{fig:ris1}.
+
+Gli individui delle popolazioni iniziali sono stati inizializzati casualmente con valori appartenenti all'intervallo [-10,10].
+
+
+Il grafico in figura \ref{fig:g1} mostra l'andamento dell'errore al crescere del numero di core nel caso in cui la popolazione iniziale su ciascuno core sia costituita da 20 elementi. Come è possibile notare, all'aumentare del numero di core impiegati il risultato ottenuto migliora.
+
+\begin{figure}[bt]
+\centering
+\includegraphics[scale = 0.35]{grafico1.png}
+\caption{ Andamento del minimo ottenuto in funzione del numero di core impiegati per il dataset 1 }
+\label{fig:g1}
+\end{figure}
+
+\begin{figure}[bt]
+\centering
+\includegraphics[scale = 0.65]{tab1.pdf}
+\caption{ Tabella dei risultati per il dataset 1 }
+\label{fig:ris1}
+\end{figure}
+
+
+
+
+\section{Dataset 2}
+Il secondo dataset su cui è stata effettuata l'ottimizzazione è riportato in figura \ref{fig:d2} (in cui i punti del dataset sono stati congiunti con delle spezzate).
+
+\begin{figure}[bt]
+\centering
+\includegraphics[scale = 0.35]{dataset2.png}
+\caption{ Dataset 2 }
+\label{fig:d2}
+\end{figure}
+
+I risultati ottenuti sono mostrati nella tabella di figura \ref{fig:ris2}.
+In questo caso l'intervallo su cui sono stati generati casualmente gli individui delle popolazioni iniziali è stato fatto variare in funzione della dimensione della popolazione.
+
+Il grafico in figura \ref{fig:g2} mostra l'andamento dell'errore al crescere del numero di core nel caso in cui la popolazione iniziale su ciascun core sia costituita da 80 elementi. Come è possibile notare, all'aumentare del numero di core impiegati il risultato ottenuto migliora.
+
+\begin{figure}[bt]
+\centering
+\includegraphics[scale = 0.35]{grafico2.png}
+\caption{ Andamento del minimo ottenuto in funzione del numero di core impiegati per il dataset 2 }
+\label{fig:g2}
+\end{figure}
+
+\begin{figure}[bt]
+\centering
+\includegraphics[scale = 0.65]{tab3.pdf}
+\caption{ Tabella dei risultati per il dataset 2 }
+\label{fig:ris2}
+\end{figure}
+
+
+\section{Considerazioni sui risultati ottenuti}
+Prima di commentare i risultati, è necessario fare una osservazione. Il numero di iterazioni necessarie all'algoritmo genetico per convergere (su ciascun core) dipende molto poco dal numero di core impiegati. Questo perchè le perturbazioni casuali tramite le quali l'ottimizazione stocastica ha luogo sono dovute principalmente all'operatore di mutazione gaussiano. Questo operatore, il cui funzionamento è descritto nella sezione \ref{sec:Mutazione}, è stato definito in modo da far convergere l'algoritmo in un numero di iterazioni il cui ordine di grandezza è tendenzialmente lo stesso di quello del numero massimo di iterazioni specificato.
+
+Solitamente il numero effettivo di iterazioni necessarie per arrivare a convergenza è inferiore al numero massimo di generazioni, perchè l'algoritmo genetico tende ad attestarsi su uno o più minimi locali, nel momento in cui riesce a trovarne.
+
+Il tempo di esecuzione è dunque praticamente indipendente dal numero di core impiegati, e dipende sostanzialmente dalla dimensione della popolazione iniziale, come è possibile evincere dalle tabelle.
+
+\vspace{0.5 cm}
+
+Il vantaggio di avere più unità di calcolo sta nella possibilità di esplorare un dominio di ricerca più ampio, e dunque nella possibilità di trovare un numero di minimi locali maggiore. Perchè questo sia possibile, bisogna inizializzare le popolazioni iniziali scegliendo valori in intervalli di inizializzazione adaguatamente dimensionati.
+
+Questi intervalli non devono esere troppo piccoli, altrimenti si rischia che tutti i core tendano a trovare gli stessi minimi locali, rendendo di fatto completamente inutile l'impiego di tanti core\footnote{In pratica core diversi tenderebbero a fare lo stesso lavoro.}.
+
+Allo stesso modo gli intervalli non possono essere troppo grandi, perchè altrimenti la probabilità di trovare buone soluzioni (in relazione al minimo globale, che nel caso in esame esiste) diminuisce notevolmente. Ciò accade perchè se tutti gli individui dell'algoritmo genetico si trovano in una zona di $\mathds{R}^n$ in cui la funzione obiettivo è sostanzialmente piatta, è molto difficile l'algoritmo riesca a trovare un minimo (si procederebbe sostanzialmente per ricerca casuale).
+Naturalmente bisogna tenere in considerazione che scegliendo intervalli più grandi è possibile trovare soluzioni migliori poichè si allarga il dominio di ricerca.
+
+\vspace{0.5 cm}
+
+Avendo più core a disposizione, in ogni caso, aumenta la probabilità di riuscire a trovare dei minimi locali.
+
+Di conseguenza, è possibile compensare la diminuzione della probabilità di trovare buone soluzioni dovuta all'allargamento degli intervalli di inizializzazione con l'aumento del numero di core impegati.
+
+\vspace{0.5 cm}
+
+Gli esperimenti condotti sul secondo dataset mostrano come un buon compromesso tra numero di core e dimensione degli intervalli di inizializzazione porti ad un buon risultato (si veda la figura \ref{fig:g2}).
+
+\vspace{0.5 cm}
+
+Come ultima considerazione, si può notare dalle tabelle come l'impiego di popolazioni più numerose porti in media a risultati migliori.
+

@@ -1,0 +1,601 @@
+\chapter{Introduzione ed obiettivi}
+
+\section{Nuove tendenze architetturali}
+
+La spinta verso il continuo aumento delle prestazioni dei processori che da sempre caratterizza la storia dei calcolatori elettronici ha portato negli ultimi anni allo sviluppo di nuovi modelli architetturali, basati sull'impiego di più unità di elaborazione (CPU). Ne costituiscono un esempio i comuni PC dotati di processore multi-core o le architetture SMP (\emph{Symmetric Multi-Processing}), che sono al giorno d'oggi facilmente accessibili sul mercato.
+
+\vspace{0.5cm}
+
+La necessità di dirigersi verso architetture multielaboratore è dettata da limiti e difficoltà di carattere tecnologico, che rendono molto complicato oppure sconveniente l'aumento della frequenza di lavoro dei chip al fine di incrementare le prestazioni e/o migliorare dell'efficienza energetica.
+
+Aumentare la frequenza di lavoro significa infatti incrementare la potenza termica generata dal chip durante il suo normale funzionamento, con conseguente necessità di dissipare il calore nell'ambiente.
+Il problema può essere affrontato efficacemente riducendo progressivamente le dimensioni dei transistor di cui i chip sono costituiti. Si parla in questo senso di ottimizzare il \emph{processo produttivo}.
+
+\vspace{0.5cm}
+
+Sfortunatamente non è possibile ridurre indefinitivamente le dimensioni dei transistor, a causa del progressivo intensificarsi di effetti fisici indesiderati.
+
+L'alternativa all'aumento della frequenza di lavoro (\emph{frequency scaling}), adottata da tutti i produttori, è quindi lo sviluppo di processori costituiti da più CPU.
+
+Da osservare che l'aumento delle prestazioni ed il miglioramento dell'efficienza energetica è dovuto anche allo sviluppo di microarchitetture\footnote{Per \emph{microarchitettura} di un processore si intende lo schema logico espresso in termini di blocchi funzionali che descrive il funzionamento del processore stesso.} sempre più avanzate e ottimizzate. Ad esempio la tecnica dell'esecuzione fuori ordine (\emph{out-of-order execution}) sfrutta l'\emph{instruction-level parallelism} per raggiungere prestazioni più elevate. Un'altra tecnica è il cosiddetto \emph{simultaneous multi-threading}, che permette di eseguire più thread in parallelo su una stessa unità di elaborazione.
+
+\vspace{0.5cm}
+
+Esistono vari modi con cui più CPU in uno stesso sistema di elaborazione possono comunicare tra loro, ed esistono anche diversi schemi con cui essi possono condividere risorse quali banchi di memoria RAM o memorie cache.
+
+A titolo di esempio, i comuni processori \emph{dual-core} sono costituiti da due unità di elaborazione che condividono la memoria centrale e tutte le risorse accessibili nel sistema. I due core possono condividere anche uno o più livelli di memoria cache.
+
+Un processore dual-core di questo tipo è un esempio di architettura a memoria comune (\emph{shared memory}), in quanto la memoria centrale nella quale il sistema operativo ed i programmi applicativi risiedono durante il funzionamento del sistema è condivisa tra le due unità di elaborazione.
+
+Esistono sul mercato architetture multi-core a memoria comune con quattro, sei o otto unità di elaborazione.
+
+\vspace{0.5cm}
+
+Nonostante l'architettura a memoria comune sia attualmente molto utilizzata, essa si è dimostrata poco scalabile nel momento in cui il numero dei processori aumenta ulteriormente, perché tutte le unità di elaborazione devono condividere l'unità di comunicazione con la memoria centrale, il bus di memoria. Infatti, poiché il bus di memoria è utilizzabile da un core alla volta, all'aumentare del numero dei processori aumenta il tempo medio di attesa per l'accesso alla memoria.
+
+Un utilizzo più intensivo del caching allevia questo problema, ma allo stesso tempo amplifica il problema della coerenza della cache (\emph{cache coerency}), che deve essere gestito al fine di garantire l'integrità della memoria, e conseguentemente la correttezza delle elaborazioni effettuate.
+
+Il costo del mantenimento della coerenza della cache, che si può ottenere ad esempio mediante l'utilizzo di tecniche di \emph{snooping} o di \emph{snarfing}, diventa progressivamente sempre più pesante all'aumentare del numero di core.
+
+\vspace{0.5cm}
+
+Per questi motivi, allo scopo incrementare ulteriormente il numero di unità di elaborazione incorrendo il meno possibile in problemi di scalabilità, sono stati sviluppati sistemi di elaborazione basati sull'architettura a memoria distribuita (\emph{distribuited memory}), nella quale ogni unità di elaborazione dispone della propria memoria centrale. Non condividendo un'unica memoria centrale, le unità di elaborazione devono comunicare scambiando messaggi mediante una apposita rete di comunicazione.
+Per questo motivo le architetture a memoria distribuita vengono anche chiamate architetture \emph{a scambio di messaggi} (\emph{message passing}).
+
+Se un'architettura a memoria distribuita viene realizzata su un singolo chip, si parla di \emph{Network-on-Chip} (NoC).
+
+\vspace{0.5cm}
+
+Il Single Chip Cloud Computer (per brevità SCC) presentato da Intel nel 2010, oggetto di questo lavoro, è un esempio di Network-on-Chip.
+
+
+
+\section{Obiettivi della tesi}
+Questo lavoro si divide in due parti, che perseguono rispettivamente due obiettivi.
+
+\vspace{0.5 cm}
+
+Il primo obiettivo è quello di studiare l'architettura hardware dell'Intel Single Chip Cloud Computer ed il relativo software di supporto per il programmatore.
+In modo particolare si studierà il funzionamento della libreria RCCE, disponibile al programmatore, ed il relativo paradigma di programmazione a cui bisogna attenersi.
+L'interesse per un processore multicore a memoria distribuita che fornisce supporto per il message passing, quale è l'SCC, nasce dalle considerazioni fatte nella
+sezione precedente.
+
+\vspace{0.5 cm}
+
+Il secondo obiettivo è quello di mettere in pratica gli strumenti e le metodologie apprese nella prima parte del lavoro per sviluppare una applicazione parallela
+che sfrutti il più possibile le potenzialità dell'SCC. A questo fine si è scelto di implementare un framework di ottimizzazione mono-obiettivo e non vincolato
+basato su un \emph{algoritmo genetico parallelo}.
+
+
+
+
+\chapter{Architettura dell'SCC}
+
+\section{Introduzione all'SCC}
+Il Single Chip Cloud Computer (SCC) è un microprocessore sperimentale creato nei laboratori Intel, ed alla data attuale è il processore che contiene il più alto numero di core (48) conformi alla Intel Architecture (IA) mai integrati su un singolo chip.
+
+Nel settore dei supercomputer esistono da anni sistemi costituiti da centinaia o anche migliaia di core, ma in questi ultimi le singole unità di elaborazione implementano un instruction set molto limitato, non paragonabile alla complissità della Intel Architecture. In questo senso, l'SCC rappresenta un passo in avanti nel settore, in quanto la disponibilità di un instruction set complesso permette l'utilizzo di un sistema operativo moderno completo.
+
+L'SCC incorpora diverse tecnologie destinate ad essere impiegate su processori multi-core con un numero di core anche superiore alle 100 unità, come ad esempio la tecnologia che realizza il network-on-chip, le tecnologie avanzate di gestione dell'alimentazione o il supporto per il message passing.
+
+La nuova architettura multicore comprende alcune innovazioni che favoriscono la scalabilità in termini di efficienza energetica: tra queste, un miglior meccanismo di comunicazione core-to-core e tecniche software che consentono di configurare dinamicamente tensione e frequenza di lavoro regolando consumi di potenza tra i 25W ed i 125W.
+
+La piattaforma rappresenta l'ultimo risultato raggiunto dal progetto Intel \emph{Tera-scale Computing Research Program}. La ricerca è stata co-promossa dai laboratori Intel a Bangalore (India), i laboratori Intel a Braunschweig (Germania) e ricercatori dei laboratori Intel negli Stati Uniti.
+
+Il nome Single-chip Cloud Computer riflette il fatto che l'architettura ricorda molto da vicino un cluster scalabile di computer (una \emph{nuvola} di computer), con la peculiarità di essere integrato su un singolo wafer di silicio.
+
+A grandi linee, il sistema comprende:
+\begin{enumerate}
+	\item 24 \emph{tiles} (ossia mattonelle) che compongono il cluster: ogni tiles contiene due core IA
+	\item Una rete mesh composta da 24 router con picco di banda sul taglio pari a 256 GB/s
+	\item 4 DDR3 memory controllers integrati
+	\item supporto hardware per lo scambio dei messaggi
+\end{enumerate}
+
+\vspace{0.5cm}
+
+Ogni core può caricare il proprio sistema operativo, comprensivo di stack di rete, e agire esattamente come agirebbe il nodo di una tradizionale rete di calcolatori a commutazione di pacchetto.
+
+Uno degli aspetti più importanti della rete di comunicazione dell'SCC è che fornisce supporto a dei modelli di programmazione basati sullo scambio di messaggi che si sono dimostrati essere adatti per cluster composti da migliaia di processori.
+
+Benchè ogni core abbia due livelli di cache, non viene fornito alcun supporto per la cache coherency, in modo da rendere più semplice l'architettura, ridurre i consumi, ed incoraggiare la ricerca sul calcolo distribuito on-chip basato su sistemi a memoria distribuita.
+
+\vspace{0.5cm}
+Un altro aspetto caratterizzante l'architettura è l'attenzione alla gestione dei consumi. Le applicazioni hanno la possibilità di attivare/disattivare ogni core e regolare le performance in ogni istante, rendendo possibile la minimizzazione dei consumi, pur garantendo le prestazioni necessarie.
+
+\'E possibile regolare regolare la tensione di alimentazione e la frequenza di lavoro sia della mesh che di alcuni sottoinsiemi di core. Ogni tile ha la propria frequenza di lavoro, e gruppi di 4 tiles possono funzionare ognuno con la propria tensione di alimentazione.
+
+
+\section{Architettura}
+
+Uno schema a blocchi dell'SCC è riportato in figura \ref{fig:SCC}.
+
+\begin{figure}[bt]
+\centering
+\includegraphics[scale = 0.45]{SCCBlockDiagram.png}
+\caption{ Schema a blocchi dell'SCC }
+\label{fig:SCC}
+\end{figure}
+
+I 48 core IA presenti nell'SCC sono microprocessori della famiglia P54C, uscita sul mercato nel 1994. Il processore P54C è relativamente semplice (rispetto ai core attuali): è dotato di due pipeline a 5 stadi, istruzioni floating-point, controllore avanzato delle interruzioni APIC, ma non ha un motore di esecuzione fuori ordine e non implementa le estensioni MMX.
+
+I 48 core sono piazzati in una formazione a mattonelle (\emph{tiles}), con due core per ogni mattonella.
+
+Le \emph{tiles} sono disposte in modo tale da formare una griglia bidimensionale (2D mesh) di dimensioni 6x4. Le comunicazioni avvengono per mezzo di
+appositi router presenti all'interno di ogni tile.
+
+I quattro memory controller integrati sul chip permettono di indirizzare fino ad un massimo di 64GB di memoria.
+Più precisamente, ogni memory controller può indirizzare 2 banchi di memoria DIMM\footnote{\emph{dual in-line memory module} }, ognuno conentente 8GB di memoria.
+
+Sono inoltre presenti, come supporto hardware allo scambio di messaggi, dei banchi di SRAM locali ad ogni tile.
+Questo nuovo tipo di memoria, unito ad una nuova istruzione per la gestione della cache L1 interna al microprocessore P54C, facilitano la gestione
+della memoria dell'SCC.
+
+Il \emph{voltage regulator controller} (VRC) permette a qualsiasi core o l'interfaccia di sistema (SIF) di regolare la tensione di alimentazione in una qualsiasi delle regioni
+tratteggiate mostrate in figura \ref{fig:SCC}, oltre alla tensione di alimentazione dell'intera griglia di router.
+Questo metodo consente alle applciazioni un controllo totale del consumo di potenza.
+
+L'interfaccia esterna di sistema, o SIF (\emph{system interface controller}) permette di mettere in comunicazione un router di bordo nella
+rete mesh con l'esterno (precisamente, con un FPGA la cui funzione è descritta qui di seguito).
+
+\vspace{0.5cm}
+
+La piattaforma di sviluppo su cui il processore SCC è montato è costituita inoltre da un FPGA ed un \emph{board management microcontroller} (BMC).
+
+L'FPGA fa le veci di un \emph{chipset}, fornendo tra le altre cose interfacce ethernet, interfacce SATA, 
+un controllore globale delle interruzioni e registri contatori su cui è possibile fare incrementi in maniera atomica.
+
+Da un punto di vista operativo l'SCC è controllato da un \emph{board management microcontroller} (BMC) che inizializza ed arresta le funzionalità critiche
+della piattaforma, e che si interfaccia, tramite PCI-Express, ad un comune PC che agisce da \emph{Management Console} (MCPC).
+
+Tramite l'MCPC è dunque possibile caricare su ogni core un sistema operativo basato sul kernel Linux e caricare sui vari core una applicazione.
+
+\begin{figure}[bt]
+\centering
+\includegraphics[scale = 0.45]{RockyLake.png}
+\caption{ Piattaforma di sviluppo dell'SCC }
+\label{fig:RockyLake}
+\end{figure}
+
+La piattaforma di ricerca è rappresentata in figura \ref{fig:RockyLake}.
+
+\section{Descrizione del tile}
+Ogni tile è composto dai seguenti elementi:
+\begin{enumerate}
+	\item Due IA core PC54C, con associati una cache L1 interna ed una cache L2 esterna
+	\item Un crossbar router a 5 porte, che interfaccia il tile con la mesh e quindi con gli altri core
+	\item Un generatore di traffico (TG) per testare la mesh, non accessibile via software,
+	\item Una \emph{mes interface unit} (MIU) che gestisce tutti gli accessi alla memoria e le operazioni di scambio dei messaggi. Si noti che
+		  la MIU è l'unica interfaccia che i due core interni al tile hanno con il router, e quindi con l'esterno. Allo stesso modo, i router costituiscono
+		  l'unica interfaccia tra i vari tiles.
+	\item Delle \emph{memory lookup table} (LUT) che permettono la traduzione degli indirizzi fisici di un core in indirizzi di sistema (ossia
+		  indirizzi globali nell'SCC)
+	\item Un message-passing buffer, che supporta lo scambio di messaggi.
+	\item Ciruciterie per la generazione del clock e circuiterie di sincronizzazione per porre in comunicazione porzioni di circuiti che lavorano a
+		  frequenze differenti (GCU e CCF)
+\end{enumerate}
+
+\begin{figure}[bt]
+\centering
+\includegraphics[scale = 0.45]{Tile.png}
+\caption{ Schema a blocchi di un tile }
+\label{fig:tile}
+\end{figure}
+
+Lo schema a blocchi di un tile è riportato in figura \ref{fig:tile}.
+
+\section{ Descrizione funzionale dei componenti dell'SCC}
+
+\subsection{Message passing buffer (MPB)}
+In aggiunta alle tradizionali memorie cache, ogni tile è fornito di un buffer locale, il \emph{message passing buffer}, capace di operazioni
+veloci di lettura/scrittura.
+Questo buffer, grande 16KB, fornisce l'equivalente di 512 linee di memoria cache da 32 bytes.
+Tutti i core e la SIF possono scrivere o leggere in uno qualasiasi degli MPB.
+Sebbene l'MPB possa essere usato in qualsiasi modo, il suo principale utilizzo riguarda il meccanismo per lo scambio di messaggi, come verrà illustrato nel seguito.
+
+\subsection{ Core P54C }
+Il core, come già accennato, è un Pentium PC54. Il design originale è stato tuttavia leggermente alterato per aumentare fino a 16KB le dimensioni
+della data cache e della instruction cache di primo livello (la singola linea ha dimensione pari a 32 bytes).
+Le cache sono di tipo 4-way set associative con politica di rimpiazzo pseudo-LRU. In più, l'originale interfaccia tra bus di sistema e controllore della cache (M-unit)
+è stata integrata all'interno del core.
+
+L'instruction set del P54C è stato esteso con una nuova istruzione (\texttt{CL1INVMB}) ed un nuovo tipo di memoria (MPBT, ossia \emph{message passing buffer type}) 
+allo scopo di facilitare il meccanismo di scambio dei messaggi.
+
+L'istruzione \texttt{CL1INVMB} è stata aggiunta per invalidare tutte le linee della cache L1 che contengono dati di tipo MPBT.
+A questo scopo la cache L1 è stata estesa aggiungendo ad ogni linea un bit che specifica se la stessa contiene dati di tipo MPBT.
+Questo bit viene settato quando la linea di cache viene caricata con un dato di tipo MPBT. Per stabilire se un dato sia o meno di
+tipo MPBT, bisogna considerare l'entrata della tabella della pagine relativamente alla pagina che contiene il dato. Questa entrata, oltre che in memoria virtuale,
+è presente anche nel TLB (\emph{Translation lookaside buffers}). Il bit MPBT viene invece resettato quando il dato viene espulso dalla cache oppure quando
+vengono eseguite le istruzioni \texttt{CL1INVMB}, \texttt{INVD} o \texttt{WBINVD}.
+Di conseguenza, un nuovo bit è stato aggiunto in ogni entrata del TLB. Questo bit, presente in posizione 7 (è uno dei bit riservati, quindi precedentemente
+inutilizzati), insieme al bit PCD (\emph{page cache disable}) ed al bit PWT (\emph{page write through}) determina il tipo di memoria della pagina in questione
+(e quindi di un qualsiasi dato in essa presente). Le entrate delle tabelle delle pagine devono essere impostate dal sistema operativo.
+Dati di questo tipo sono gestiti dalla cache L2 come non-cacheable: la M-unit del core assicura che i dati di tipo MPBT non siano mai caricati nella cache L2.
+In altre parole per dati di tipo MPBT la cache L2 viene esempre bypassata.
+Inoltre, i dati di tipo MPBT vengono trasferiti tra cache L1 e memoria condivisa (MPB oppure memoria condivisa off-chip) con la granularità di 32 bytes.
+Ciò non vale per dati non di tipo MPBT.
+
+\begin{figure}[bt]
+\centering
+\includegraphics[scale = 0.45]{PageTableEntry.png}
+\caption{ Entrata della tabella delle pagine del P54C }
+\label{fig:pte}
+\end{figure}
+
+La struttura dell'entrata della tabella delle pagine è riportata in figura \ref{fig:pte};
+Il tipo MPBT viene utilizzato principalmente per quella porzione di spazio di indirizzamento fisico che corrisponde all'MPB. In generale, il sistema
+operativo può inizializzare la tabella delle pagine in modo dale che anche pagine fisiche di memoria off-chip siano etichettate come di tipo MPBT.
+Poiché tuttavia l'SCC non implementa protocolli di cache coherency (snooping, snarfing, ecc.), conviene far sì che una qualsiasi porzione di 
+memoria condivisa tra più core sia etichettata come di tipo MPBT, in modo tale da ottenere la coerenza della cache via software, nel modo
+descritto di seguito.
+Per accelerare il trasferimento di messaggi tra i core è stato inoltre aggiunto un \emph{write combine buffer} alla M-unit, che agisce sui dati di tipo MPBT.
+Il write combine buffer trattiene nella M-unit i dati aggiornati da scrivere in memoria fino a quando non si riempie una intera linea di cache, oppure fino a quando non si tenta
+di scrivere un'altra linea. Quando una di queste due situazioni si verifica, esso viene svuotato ed il comando di scrittura di una intera linea di cache viene
+inviato in memoria.
+
+\vspace{0.5cm}
+
+Quando la \texttt{CL1INVMB} viene seguita, essa pone a zero tutti i bit MPBT della cache in un ciclo di clock.
+Ogni linea di tipo MPBT viene invalidata. Se una linea da invalidare era stata modificata, il dato modificato non va ad
+aggiornare la memoria, ma viene perso.
+\'E responsabilità del software assicurare che i dati di tipo MPBT presenti in cache non vadano persi.
+Nel peggiore dei casi, si può eseguire l'istruzione \texttt{WBINVD}, la quale, prima di invalidare l'intera cache L1, si preoccupa di effettuare
+l'operazione di \emph{write back}, ossia la propagazione verso l'esterno dei dati aggiornati (assicura la cache coerency).
+
+\vspace{0.5cm}
+
+Per quanto riguarda il message passing, l'istruzione \texttt{CL1INVMB} può essere usata per mantenere coerente la cache L1 (visto e considerato che la
+cache L2 viene comunque bypassata) con il contenuto dalla memoria condivisa (MPB oppure memoria condivisa off-chip).
+\'E sufficiente infatti eseguire la \texttt{CL1INVMB} prima di leggere dalla memoria condivisa per causare un read miss e dunque essere sicuri di leggere il contenuto attuale dell'MPB e non una copia non aggiornata dei dati in memoria condivisa (\emph{stale data}).
+Analogamente, è sufficiente eseguire la \texttt{CL1INVMB} prima di scrivere nell'MPB per causare un write miss e forzare il P54C a emettere effettivamente una richiesta
+di scrittura verso l'esterno. Infatti la politica in caso di write miss della cache L1 è \emph{no write allocate}. In altre parole, solo le
+read miss comportano il caricamento del dato in cache. Se non eseguissimo la \texttt{CL1INVMB}, il dato da modificare con l'operazione di scrittura potrebbere
+essere già presente in cache, ed in virtù della politica write-back la scrittura aggiornerebbe solamente la cache, non arrivando in memoria condivisa.
+
+
+\subsection{ Cache L2 }
+Ogni core ha la propria cache di secondo livello (256KB) con il controllore associato.
+Durante un \emph{cache miss} di quest'ultima, il controllore invia l'indirizzo richiesto alla MIU, per la decodifica dell'indirizzo (si veda il paragrafo
+dedicato alle lookup tables, o LUT) ed il successivo fetching in memoria.
+Ogni core può avere in ogni istante solamente una richiesta pendente verso la memoria. Sarà quindi costretto ad attendere a causa di una \emph{read miss}
+fino a quando i dati non arrivano dalla memoria.
+In seguito ad una \emph{write miss}, invece, il core può continuare ad operare a patto che non si verifichi un altra write miss oppure una read miss.
+All'arrivo del dato richiesto, il core può tornare ad operare normalmente.
+
+Nonostante queste limitazioni, dovute all'impiego del P54C, il resto dell'hardware (la mesh ed il sistema della memoria) 
+è capace di supportare più richieste pendenti.
+La cache L2 è di tipo 4-way set associative con politica di rimpiazzo pseudo-LRU. Può essere usata solo in modalità \emph{write-back} e non supporta la
+modalità \emph{write-allocate}.
+
+Nell'SCC, le istruzioni \texttt{INVD} e \texttt{WBINVD} eseguite da un core non hanno alcun effetto sulla cache L2 del core stesso.
+
+
+\subsection{Tabelle di lookup per la traduzione degli indirizzi}
+Ogni core dispone di una \emph{lookup table} (LUT) che è formata da un insieme di registri di configurazione (che sono a loro volta mappati in memoria
+tramite loro stessi). Questa tabella mappa gli indirizzi fisici del core nello spazio di indirizzi di sistema dell'SCC (indirizzi globali).
+Una LUT contiene 256 entrate, una per ogni porzione dello spazio di indirizzamento fisico del processore, che è di 4GB (gli indirizzi del core sono su 32 bit).
+Di conseguenza ogni entrata della LUT mappa 16MB dello spazio fisico di indirizzamento del processore.
+Ogni entrata della LUT può puntare ad una qualsiasi locazione di memoria: le memoria privata del core (la RAM off-chip accedibile tramite i 4 memory controller),
+il message passing buffer, i registri di configurazione del core, l'interfaccia di sistema (SIF) o il controllore dell'alimentazione.
+Il LUT può essere programmato dalla Management Console per mezzo di scritture che attraverso la SIF. Normalmente, le sue entrate sono
+inizializzate con una configurazione opportuna  durante il processo di bootstrap del sistema. Dopo il boot, una generica LUT può essere dinamicamente
+modificata da qualsiasi core che sia capace di indirizzarla attraverso la propria LUT.
+Quando si verifica una chache miss della cache L2, la MIU consulta la LUT per determinare dove la richiesta di memoria debba essere spedita.
+
+\subsection{ Mesh Interface Unit (MIU) }
+La Mesh Interface Unit (MIU) contiene i seguenti blocchi funzionali:
+\begin{enumerate}
+	\item Pacchettizzatore e depacchettizzatore
+	\item Interprete dei comandi provenienti dall'esterno, decodificatore degli indirizzi
+	\item Alcuni registri locali di configurazione
+	\item Logica per il controllo di flusso a livello di collegamento (livello data link)
+	\item Un arbitro per coordinare richieste diverse provenienti da agenti diversi
+\end{enumerate}
+
+Il pacchettizzatore/depacchettizzatore traduce i dati da/verso gli agenti alla/dalla mesh.
+
+Più in dettaglio, al verificarsi di una cache miss L2, la MIU decodifica l'indirizzo del dato richiesto, utilizzando 
+la LUT per tradurre l'indirizzo locale del core in un indirizzo di sistema. Dunque inserisce la richiesta in una coda
+appropriata.
+Ci sono tre code di richieste:
+\begin{enumerate}
+	\item Richieste per l'accesso al router, e quindi alla memoria off-chip.
+	\item Accesso al message passing buffer
+	\item Accesso ai registri locali di configurazione
+\end{enumerate}
+
+Per quanto riguarda il traffico proveniente dal router, la MIU è responsabile di dirottare i dati verso 
+la destinazione locale appropriata. Il controllo di flusso a livello data link è gestito attraverso un
+protocollo credit-based.
+
+L'arbitro opera secondo una politica round robin.
+
+\begin{figure}[bt]
+\centering
+\includegraphics[scale = 0.45]{LUT.png}
+\caption{ Schema di traduzione degli indirizzi }
+\label{fig:LUT}
+\end{figure}
+
+Il core lavora con indirizzi fisici a 32-bit. Gli 8 bit più significativi sono usati direttamente come indice nella
+LUT in concomitanza di una cache miss. Il LUT emette in uscita 22 bit: 10 bit di estensione per l'indirizzo di sistema, 8 bit di
+\texttt{tileID}, 3 bit di \texttt{sub-destinationID} e un bit di \emph{bypass}.
+Il campo \texttt{tileID} è un identificatore che specifica il tile destinazione della richiesta di accesso in memoria effettuata dal core.
+Il campo \texttt{sub-destinationID}, che va interpretato in base al valore del campo \texttt{tileID}, specifica su quale porta del router destinatario il pacchetto inviato
+dovrà essere rediretto e/o qual è il dispositivo destinatario: potrebbe trattarsi di un MPB, di un registro di configurazione, di un memory controller,
+del VRC (voltage regulator controller) oppure dell'interfaccia di sistema (SIF).
+L'indirizzo di sistema è dunque a 46-bit: il bit di bypass + 3 bit di \texttt{sub-destinationID}
++ 8 bit di \texttt{tileID} + 10 bit di estensione dell'indirizzo + i 24 bit meno significativi dell'indirizzo a 32-bit del core.
+
+Il \texttt{sub-destinationID} definisce la porta dalla quale il pacchetto lascia il router (porta est, ovest, nord, sud).
+
+Il tile specificato dal campo \texttt{tileID} (tile destinatario) riceve il pachetto inviato dal router e utilizzando il campo \texttt{sub-destinationID} (inviato anch'esso nel pacchetto)
+decide quale destinazione prendere. Il bit di bypass specifica accessi locali all'MPB.
+
+I 34 bit meno significativi dell'indirizzo di sistema tradotto vengono spediti al tile destinatario.
+
+Il campo \texttt{tileID} è codificato in maniera tale da permettere ai router di effettuare il routing dei pacchetti in modo corretto.
+
+\subsection{Registri di configurazione}
+I registri di configurazione presenti in ciascun tile forniscono alle applicazioni la possibilità di controllare i modi di operazione delle 
+varie unità hardware presenti nel tile stesso. Questi registri controllano l'abilitazione del reset locale, le impostazioni del clock locale, la configurazione
+iniziale dei core, la gestione delle interruzioni e la configurazione della cache L2.
+Ogni core, cache controller della L2 o unità di gestione del clock ha un registro di configurazione dedicato che è accessibile in scrittura da qualsiasi altro core
+e dalla SIF. In più sono presenti dei \emph{test-and-set register} per rendere possibili i protocolli di comunicazione (ad esempio un protocollo basato sullo
+ scambio di messaggi) in ambito multi-processore.
+Più in dettaglio, ogni core possiede il proprio test-and-set register. Il valore iniziale di tali registri è 1. Un core acquisice il lock leggendo un
+test-and-set register ed ottenendo uno. Qualsiasi core (non necessariamente quello che ha acquisito il lock) può rilasciare il lock scrivendo un qualsiasi
+valore nel test-and-set register. Per convenzione, all'atto del rilascio viene scritto il valore 0.
+
+Al reset, i registri di configurazione sono settati con dei valori ben noti e sicuri.
+Per modificare i registri di configurazione, è necessario seguire il paradigma read-modify-write sull'intero registro a 32 bit, per essere sicuri
+che l'operazione avvenga correttamente (non sono supportati accessi a porzioni di bit inferiori a 32-bit).
+
+Il registro di configurazione di un bit contiene anche i due bit di interrupt: il bit \texttt{INTR} che segnala le interruzioni mascherabili
+ed il bit \texttt{NMI} che segnala le interruzioni non mascherabili. I due bit del registro sono connessi direttamente ai rispettivi pin di interrupt
+del core.
+
+\subsection{Voltage regulator controller}
+Il \emph{Voltage regulator controller} (VRC) è gestito attraverso delle locazioni di memoria di sistema accessibili da un qualunque core
+abbia mappato tali locazioni nella propria LUT.
+
+Una scrittura in queste locazioni si traduce in un comando per il VRC, che viene spedito sulla mesh ed eseguito.
+Il VRC accetta il comando, modifica la tensione di alimentazione, ed infine invia un riscontro al tile che ha generato
+il comando, cosicché quest'ultimo possa essere sicuro che il comando sia stato eseguito con successo.
+
+In fase di inizializzazione del sistema, il VRC deve ricevere i comandi per fornire l'alimentazione ai tiles, in modo tale che questi possano essere resettati.
+Successivamente, il VRC può ricevere richieste addizionali: togliere l'alimentazione ad un sottoinsieme di tiles, passare in
+modalità risparmio energetico, passare in modalità alte prestazioni, etc. ).
+
+\subsection{Rete mesh}
+La rete mesh di cui l'SCC è dotato, è formata da 24 router che commutano pacchetti in una configurazione 6x4 (conforme alla formazione dei tiles). La
+rete è dotata di una sua sorgente di alimentazione e di un suo generatore di clock, separati da quelli del resto del chip. Ciò permette di trovare
+un compromesso ottimale tra consumi e prestazioni.
+
+Il router utilizzato (RXB) è un router di nuova generazione pensato per le future strutture mesh bidimensionali da utilizzarsi per processori multicore
+analoghi all'SCC. Le sue caratteristiche sono le seguenti:
+\begin{enumerate}
+	\item Larghezza dei collegamenti: 16 bit per la linea dati + 2 bit per segnali di controllo
+	\item Frequenza: 2 Ghz
+	\item Latenza: 4 cicli, includendo l'attraversamento del link
+	\item Diverse classi di messaggi: una classe di messaggio per le richieste ed una classe di messaggi per e risposte
+	\item Più canali virtuali (VC): 1 VC riservato per ogni classe di messaggi + 6 VC a disposizione per un totale di 8 VC
+	\item Gestione dinamica dell'alimentazione: modalità di sleep, controllo della tensione, clock gating\footnote{Il \emph{clock gating} è una tecnica di 
+	      progetto di circuiti digitali in base alla quale si cerca di fornire il clock solo a quelle porzioni di circuito che in un dato istante
+		  stanno effettivamente lavorando, riducendo così i consumi globali medi}, ecc..
+\end{enumerate}
+
+Gli agenti della mesh commuicano tra di loro tramite scambio di pacchetti. Un pacchetto corrisponde di uno o più \emph{flit} (fino 
+ad un massimo di tre flit). Un pacchetto dati è composto da tre flit, con l'header nel primo flit, il corpo nel secondo e la coda nel terzo.
+I flit di controllo (che non sono pacchetti contenenti dati utili) sono utilizzati per scambiare informazioni di controllo quali i crediti (utilizzati nel
+protocollo di controllo di flusso).
+
+Il controllo dell'errore viene effettuato end-to-end, principalemente attraverso l'uso di diversi bit di parità, applicati alle informazioni di instradamento, 
+alle informazioni di comando ed ai dati.
+
+I percorsi seguiti dai pacchetti vengono instradati secondo una semplice politica x-y: un pacchetto si sposta prima orizzontalmente fino all'ascissa di
+destinazione e successivamente si muove verticalmente.
+
+
+\section{Gestione dinamica della frequenza di funzionamento e della tensione di alimentazione}
+I core dell'SCC sono divisi in sei \emph{voltage island} (o \emph{voltage domain}), ognuna contenente una matrice 2x2 di tiles. Ogni isola ha dunque in totale
+di otto P54C core.
+Ciascuna isola possiede una propria sorgente di alimentazione. Il clock è invece fornito ad un livello più piccolo di granularità, in modo che ogni tile possa
+operare ad una sua propria frequenza. Le isole di tensione e di frequenza rendono possibile lo spegnimento o la riduzione dei consumi (e quindi delle 
+prestazioni) di sottoinsiemi dell'SCC, in modo da minimizzare il consumo di energia.
+La regolazione può avvenire sotto il controllo dell'applicazione che può impostare il livello di prestazione voluto in specifici
+gruppi di tiles.
+
+\vspace{0.5 cm}
+
+Sono dunque possibili diversi paradigmi per il controllo delle performance. Ad esempio:
+\begin{itemize}
+	\item un core controlla tutti gli altri
+	\item ogni core controlla sé stesso
+	\item ogni core controlloa il quadrante in cui si trova
+\end{itemize}
+
+Come già accennato, la mesh ha un proprio generatore di clock e una propria sorgente di alimentazione, condivise da tutti i router nella griglia.
+Per questo motivo, qualsiasi comunicazione tra un router e l'hardware all'interno del tile (o altre periferiche connesse all'SCC) richiedono 
+dell'hardware di raccordo (level shifter e asynchronous clock transition): queste ultime funzionalità sono fornite dall'unità CCF (clock crossing FIFO).
+I consumi della mesh possono dunque essere controllati indipendentemente da quelli dei core, e viceversa. Si può dunque pensare all'intera mesh come 
+un'unico dominio di frequenza/tensione.
+
+
+
+\chapter{Programmazione con l'SCC}
+
+\section{Introduzione}
+L'SCC fornisce strumenti di basso livello per supportare diversi paradigmi di programmazione. Il paradigma tipicamente utilizzato si
+basa su una qualche forma di message passing. Come già accennato, i messaggi vengono trasferiti nel chip utilizzando i
+message passing buffer (MPB). Come descritto nel capitolo precedente, l'SCC supporta diverse configurazioni della memoria off-chip (la RAM esterna
+accedibile tramite i quattro memory controller), esponendo i registri di configurazione delle tabelle di lookup (LUT). In ogni istante, 
+l'applicazione può modificare il modo in cui gli indirizzi fisici di un dato core vengono tradotti (mappati) in indirizzi di sistema.
+
+Gli indirizzi fisici di ogni core possono essere mappati sugli indirizzi di sistema in modo tale da far sì che tutta, parte, o nessuna parte del loro spazio di
+indirizzamento si riferisca ad una porzione di memoria condivisa tra determinati insiemi di core.
+
+La suddivisione della memoria off-chip tra memoria privata a ciascun core e memoria condivisa tra gruppi di core è programmabile
+in modo dinamico, in modo da rendere il sistema flessibile nel partizionare compiti tra i core.
+La memoria condivisa può essere usata per scambiare dati fra i core, o per memorizzare dati (ad esempio la si potrebbe utilizzare per
+implementare un database in-memory).
+Può essere convieniente disabilitare il caching per la porzione di memoria condivisa, oppure gestire la coerenza della cache via software.
+
+Tutti gli accessi di I/O sono rediretti sull'interfaccia di sistema (SIF) e dunque all'FPGA off-chip.
+
+\vspace{0.5cm}
+
+Come accennato nel capitolo precedente, le interruzioni vengono segnalate ad un determinato core settando e resettando un bit appropriato nel registro
+di configurazione di quel core. Il software può generare interruzioni non mascherabili, interruzioni mascherabili oppure interruzioni
+per la gestione del sistema (\emph{systema management interrupt}). Il modo in cui un core processa le interruzioni è configurato
+nella Local Vector Table (LVT) del Local APIC di cui il P54C è dotato.
+
+L'SCC dispone di diversi metodi di reset della logica dei core, a vari livelli di granularità: a titolo di accenno, esiste l'\emph{hard reset}, il \emph{soft reset},
+il \emph{direct single core reset} ed il \emph{direct single L2 cache reset}.
+
+\vspace{0.5 cm}
+
+In fase di inizializzazione della piattaforma su cui è montato l'SCC, su ogni core viene caricato un sistema operativo basato sul kernel di Linux.
+Ogni core dispone della sua copia del sistema operativo, presente nella sua memoria privata. A livello operativo, i programmi applicativi con cui si vogliono
+sperimentare le potenzialità dell'SCC possono essere caricati sfruttando lo stack di rete attivo su tutti i core. Attraverso l'interfaccia di sistema (SIF)
+vengono stabilite delle connessioni ssh tra l'MCPC ed i core, in modo da poter lanciare le applicazioni semplicemente eseguendo un comando remoto dall'MCPC.
+
+
+\section{La libreria RCCE}
+\label{sez:alloc}
+Per utilizzare l'SCC allo scopo di effettuare ricerche sulle architetture a scambio di messaggi, è stata sviluppata la libreria RCCE, una libreria leggera
+e di dimensioni contenute che implementa le funzionalità minimali per consentire lo scambio di messaggi tra i core.
+La libreria utilizza gli MPB presenti nei tiles (si ricordi che si tratta di memoria on-chip) per trasferire dati tra core differenti.
+
+L'MBP è un'area di memoria condivisa, e dunque in teoria potrebbe essere utilizzata in un modo qualsiasi dalle applicazioni.
+Poiché tuttavia ogni MPB è grande solo 16KB\footnote{si consideri inoltre che i 16KB sono dedicati complessivamente ad un tile, e quindi andrebbero
+suddivisi tra i due core}, è conveniente utilizzarlo unicamente come buffer per lo scambio di messaggi. La dimensione dell'MPB è
+infatti troppo piccola perché esso possa essere utilizzato per memorizzare le strutture dati di un'applicazione di medie dimensioni.
+
+RCCE è una libreria di basso livello, che era inizialmente stata concepita per lavorare sull'SCC senza il supporto del sistema operativo
+(si parla di \emph{bare metal mode}). Di conseguenza, essa è stata sviluppata senza fare affidamento ai tipici servizi che un sistema operativo offre.
+
+Solo successivamente è stato possibile effettuare il porting di Linux sull'SCC, e da quel momento in poi si è in generale preferito lavorare con Linux.
+
+\vspace{0.5 cm}
+
+Per questi motivi, le scelte di progetto effettuate per RCCE hanno comportato una notevole riduzione degli overhead. Innanzitutto, senza sistema operativo
+non esiste il concetto di unità di schedulazione, e dunque RCCE è pensata per eseguire una singola applicazione, senza necessità di richiedere servizi al
+sistema operativo portando il processore in modalità sistema. Ciò non rende possibile effettuare comunicazioni asincrone, poichè un'implementazione
+di queste ultime richiederebbe l'utilizzo di più thread. Di conseguenza le operazioni di invio e ricezione sono necessariamente bloccanti. Se da un lato
+ciò costituisce una limitazione, dall'altro semplifica enormemente la gestione dei messaggi, dal momento che in ogni istante ci può essere solamente una 
+comunicazione in attesa di completamento tra ogni coppia di core.
+Ciò comporta che:
+\begin{itemize}
+	\item non ci sono code di messaggi
+	\item sono sufficienti due variabili di sincronizzazione per ogni coppia di core comunicanti
+	\item l'MPB può essere interamente dedicato al payload della comunicazione (al netto dello spazio necessario per le variabili di sincronizzazione)
+\end{itemize}
+Il modello di programmazione fornito da RCCE è molto semplice: si basa sul paradigma \emph{Single Program Multiple Data} (SPMD).
+Di conseguenza, lo stesso eseguibile viene caricato su tutti i core. Nel codice sorgente, i costrutti condizionali possono essere utilizzati per far eseguire
+parti di codice solo a determinate unità di esecuzione (ad ogni unità di esecuzione è associato un identificatore, utilizzabile nel codice sorgente).
+In questo modo, pur utilizzando un solo programma (\emph{Single Program}), è possibile assegnare compiti diversi ad unità di esecuzione diverse, che in generale
+lavoreranno su dati differenti (\emph{Multiple Data}).
+
+Ogni core esegue sempre e solo un'unica unità di schedulazione (o unita di esecuzione). Un'applicazione è costituita da un'insieme di unità di esecuzione che
+cooperano. Da un punto di vista logico, le unità di esecuzione iniziano ad eseguire il codice applicativo nello stesso istante e terminano nello stesso istante.
+In altre parole, l'inizio e la fine sono punti di sincronizzazione (barriere).
+
+La disponibilità dei servizi del sistema operativo consentirebbe di superare tutte queste limitazioni, ma allo stesso tempo introdurrebbe overhead temporale
+e spaziale\footnote{si ricordi che le dimensioni dell'MPB sono critiche}.
+
+\vspace{0.5cm}
+
+RCCE spedisce un messaggio da un core all'altro trasferendo dati dalla data cache L1 del core sorgente alla data cache L1 del core destinatario, utilizzando
+l'MPB del core sorgente come memoria tampone. Di conseguenza il trasferimento vero e proprio non fa utilizzo della memoria off-chip: questo è un grande vantaggio,
+perchè il trasferimento risulta molto efficiente. Ovviamente in questa analisi non si tiene conto del costo necessario per trasferire eventualmente il messaggio
+ricevuto dalla cache L1 ai livelli più bassi della gerarchia (cache L2 e memoria privata off-chip). In ogni caso, essendo la data cache L1 grande 16KB, per messaggi
+sufficientemente piccoli (ad esempio fino a 4KB) non dovrebbe essere necessario ricorrere troppo alla memoria off-chip, se le elaborazioni da effettuare non
+sono troppo costose in termini di memoria.
+
+I 16 KB di ogni MPB vengono equamente suddivisi tra i due core su ogni tile. Nel seguito, per semplicità, per \emph{MPB di un core} si intenderà la porzione di 8KB di
+MPB del tile a cui il core appartiene dedicata al core stesso.
+Per semplificare la gestione della comunicazione, si adotta un modello simmetrico di 
+allocazione dell'MPB. In questo modello ogni operazione di allocazione di memoria sull'MPB (di una variabile condivisa) è eseguita da tutti i core. Quando si vuole
+allocare, da un punto di vista logico, una variabile condivisa in un determinato MPB, una copia di tale variabile viene allocata da ogni core all'interno del proprio
+MPB utilizzando lo stesso ed identico offset locale per tutti gli MPB.
+Anche se lo spazio allocato per la variabile verrà effettivamente utilizzato solo in un MPB, tutti gli altri core allocano lo stesso spazio nella stessa 
+posizione relativa nell'MPB, senza però utilizzarlo.
+
+Di conseguenza, tutti i core hanno una visione identica della posizione nell'MPB di tutte le variabili condivise. Ogni core ha tuttavia mappato nel proprio
+spazio di indirizzi fisici l'MPB ad un indirizzo diverso, che viene calcolato dall'RCCE in fase di inizializzazione.
+Un core \texttt{C1} che necessiti di accedere ad una variabile condivisa logicamente allocata nell'MPB di un altro core \texttt{C2} può farlo utilizzando 
+l'indirizzo della copia di tale variabile allocata nel proprio MPB, traslato di una quantità pari alla differenza tra l'indirizzo fisico dell'MPB del core \texttt{C2} e l'indirizzo fisico del proprio MPB\footnote{Naturalmente tutti gli indirizzi fisici si riferiscono al core \texttt{C2}, e vengono dunque tradotti correttamente con la sua LUT.}. Questo metodo di calcolo degli indirizzi costituisce il vantaggio del modello di
+allocazione simmetrica.
+
+\vspace{0.5cm}
+
+Questo modello di allocazione può dunque apparire molto restrittivo, ma in pratica non costituisce un problema, considerando che l'MPB viene usato solamente come
+buffer di comunicazione. Più precisamente nell'MPB vengono memorizzati due tipi di dati: il messaggio da inviare (che non ha nessun overhead quali header, 
+checksum, ecc..) e flag di sincronizzazione. I flag di sincronizzazione sono variabili booleane che servono a coordinare le operazioni di invio e ricezione.
+Dal momento che tutti i core in una applicazione che utilizza RCCE normalmente partecipane nel message passing, è effettivamente necessario che tutti i core
+allochino il payload dei messaggi ed i flag.
+
+\vspace{0.5cm}
+
+RCCE fornisce al programmatore due tipi di interfacce. L'interfaccia \emph{non-gory} è di più alto livello e fornisce le funzioni \texttt{RCCE\_send()} e
+\texttt{RCCE\_recv()} che
+vanno chiamate rispettivamente dal trasmettitore e dal ricevitore e che complessivamente trasferiscono un messaggio di dimensione arbitraria dallo spazio
+di memoria (che non sia mappato nell'MPB) del core trasmettente allo spazio di memoria (che non sia mappato nell'MPB) del core ricevente, senza esporre al
+programmatore i flag di sincronizzazione. Queste due funzioni sono implementate attraverso due funzioni analoghe di più basso livello, che costituiscono l'altra
+interfaccia
+(l'interfaccia \emph{gory}), ossia le funzioni \texttt{RCCE\_put} e \texttt{RCCE\_get} che invece trasferiscono un messaggio multiplo di 32 bytes (dimensione
+della linea di cache) e non più grande dello spazio disponibile nel MPB dei core\footnote{Poichè si utilizza il modello di allocazione simmetrica gli MPB di
+tutti i core hanno esattamente lo stesso spazio disponibile}, ossia lo spazio non utilizzato per allocare variabili condivise.
+
+Le suddette funzioni specificano l'indirizzo del messaggio da trasferire (o dell'indirizzo in cui copiare il messaggio ricevuto), l'identificatore del core
+destinatario (o quello del core sorgente) ed il numero di bytes da inviare (o da ricevere).
+
+Se l'utente vuole utilizzare l'interfaccia non-gory, RCCE alloca in ogni MPB due array di flag di sincronizzazione, l'array \texttt{sent} e l'array \texttt{ready},
+aventi ciascuno tanti elementi quante sono le unità di esecuzione dell'applicazione. L'utilizzo di questo flag è specificato nella sezione successiva.
+
+\vspace{0.5cm}
+
+Oltre alle funzioni necessarie per effettuare la comunicazione, RCCE fornisce altre funzioni di supporto (i.e. split del dominio di comunicazione, timer e altre
+funzioni di utilità).
+
+
+\subsection{Implementazione delle funzioni di comunicazione non-gory}
+All'invocazione della \texttt{RCCE\_send()}, il messaggio viene spezzato in blocchi di dimensione pari allo spazio disponibile negli MPB e viene inviato
+blocco per blocco tramite la \texttt{RCCE\_put()}. Se l'ultimo blocco non dovesse avere una dimensione multipla di 32 bytes, esso viene completato con del
+padding.
+Prima di effettuare la copia del blocco dalla memoria del trasmettitore (e quindi, dalla sua data cache L1) all'MPB dello stesso, la \texttt{RCCE\_put()}
+invalida le linee di cache L1 che mappano l'MPB (utilizzando la \texttt{CL1INVMB}), per quanto detto nel capitolo precedente. Successivamente, la \texttt{RCCE\_send()}
+segnala al core ricevente di aver effettuato l'operazione di copia settando uno dei flag di sincronizzazione allocati nell'MPB del core ricevente (precisamente,
+l'elemento nell'array di flag \texttt{sent} relativo al core trasmettitore).
+Il ricevente, parallelamente a tutto ciò, avendo invocato la \texttt{RCCE\_recv()} si era posto in attesa (attiva) che il flag \texttt{sent} relativo al core trasmettitore
+venisse settato. Quando ciò avviene, può copiare nel proprio spazio di memoria il blocco scritto dal trasmettitore nell'MPB di quest'ultimo, dopo aver invalidato
+a sua volta le linee della data cache L1 che mappano l'MPB (utilizzando la \texttt{CL1INVMB}), per essere sicuro di accedere effettivamente all'MPB del trasmettitore.
+Fatto ciò, segnala al core trasmettitore di aver terminato l'operazione ed essere pronto a ricevere nuovi dati settando uno dei flag di sincronizzazione allocati
+nell'MPB del core trasmettitore (precisamente l'elemento nell'array di flag \texttt{ready} relativo al core ricevente).
+Il trasmettitore, dopo aver scritto il blocco nel proprio MPB, si era posto in attesa (attiva) che il flag \texttt{ready} relativo al core ricevente venisse settato
+da quest'ultimo. Quando ciò avviene, può ripetere il procedimento inviando un altro blocco.
+
+\subsection{Implementazione dei flag di sincronizzazione}
+Essendo i flag variabili booleane, ogni flag può essere implementato semplicemente con un bit. Tuttavia le scritture e le letture dei flag devono essere atomiche
+perchè il protocollo descritto nella sottosezione precedente funzioni correttamente. A causa del write combine buffer, le scritture nell'MPB devono essere effettuate
+scrivendo un'intera cache line per volta (con più operazioni di scrittura, ma non si deve scrivere solo una parte incompleta di linea di cache).
+
+Di conseguenza, il modo più semplice di implementare i flag in RCCE è quello di memorizzare ogni flag in una sua linea di cache dedicata, in modo da evitare di
+accedere più linee cache per assicurare che il write combine buffer si svuoti. 
+
+Ogni core ha bisogno dei suoi due array di flag. Nonostante il modello di memoria simmetrico preveda in generale che ci siano copie di variabili condivise inutilizzate, nel caso particolare di questi due array tutte le copie effettivamente allocate vengono anche effettivamente utilizzate. Infatti, durante l'inizializzazione di RCCE, ogni core alloca un solo array \texttt{ready} ed un solo array \texttt{sent} (e non N coppie di array). Grazie al modello simmetrico i due array sono allocati esattamente allo stesso offset in ciascun MPB. Ogni core può dunque calcolare con facilità l'indirizzo di un particolare flag (in uno dei due array di flag) associato ad un particolare core, come specificato nella sezione \ref{sez:alloc}.
+
+\vspace{0.5 cm}
+
+In ogni caso, se un applicazione utilizza 48 core, sono necessari almeno 96 flag per core
+(ci potrebbero essere altri flag necessari per altre funzionalità di RCCE), che in totale occupano il 37.5\% dell'intero MPB\footnote{96*32 bytes = 3072 bytes}.
+
+Per evitare questo spreco eccessivo di spazio, si può optare per un'implementazione alternativa, che impiega effettivamente un solo bit per ogni flag: in questo
+modo una linea di cache (32 bytes) può contenere fino a 256 flag. Aggiornare un flag richiede in questo caso la copiatura dell'intera lina di cache in cui
+tale flag è allocato dall'MPB in memoria privata, aggiornare il bit associato al flag, e riscrivere la linea di cache aggiornata nell'MPB. Questa operazione
+deve essere eseguita in mutua esclusione con gli altri core. Ciò si può ottenere sfruttando i registri test-and-set di cui ogni core è fornito.
+Questa implementazione comporta un maggiore overhead, dovuto alle operazioni di acquisizione/rilascio del lock e le manipolazioni di bit all'interno delle
+linee di cache contenenti i flag. Si ottiene però un vantaggio importante perchè il numero di sincronizzazioni necessarie per il trasferimento di un messaggio
+nei due casi, a parità di dimensione del messaggio, è mediamente minore in quest'ultimo caso (essendoci nell'MPB più spazio per il payload).

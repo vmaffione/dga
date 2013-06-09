@@ -1,0 +1,84 @@
+\documentclass[a4paper,11pt,oneside]{book}
+
+\author{Vincenzo Maffione}
+\title{Generic genetic algorithm on Intel SCC}
+\date{\today}
+
+%\usepackage{syntonly}
+%\syntaxonly
+
+\usepackage{lmodern} 
+
+\usepackage{dsfont} % per i simboli degli insiemi di numeri (R,Z,Q,IR)
+\usepackage{amssymb} % simboli matematici AMS
+\usepackage{amsmath}
+
+\usepackage{txfonts}
+
+\hyphenation{pro-prie-tà in-di-vi-duo re-le-ga-re mo-del-lo mo-del-li o-pe-ra-zio-ni o-pe-ra-to-ri mo-du-lo ri-ve-la-to per-met-te-re rap-pre-sen-ta-zio-ne mo-del-liz-za-zio-ne ge-ne-ra-to o-biet-ti-vo li-ne-a-re no-no-stan-te po-si-ti-va e-la-bo-ra-zio-ne o-pe-ra-ti-vo sca-la-bi-li-tà i-ni-zia-liz-za-re in-di-vi-duo o-pe-ra-to-re va-lo-ri i-te-ra-zio-ni in-va-li-da-re pe-ri-fe-ri-che re-gi-stri ma-na-ge-ment e-si-ste pra-ti-ca va-ria-bi-li in-di-riz-zo o-pe-ra-zio-ne me-dian-te in-di-vi-duo sem-pli-ci-tà co-lo-ri ha-mil-to-nia-no que-sta in-clu-de-re ge-ne-tic}
+
+\usepackage[italian]{babel}
+
+%\usepackage{indentfirst} % indentazione nella prima riga di ogni capoverso
+
+\setlength{\parindent}{0pt} % elimina l'indentazione sulla prima riga di ciascun capoverso
+
+
+\usepackage[T1]{fontenc} % migliora la sillabazione di lingue non inglesi
+\usepackage[latin1]{inputenc} %codifica per le lingue latine
+
+
+% definizione dell'ambiente "abstract", per aggiungere il sommario
+\usepackage{fancyhdr}
+\newcommand{\fncyblank}{\fancyhf{}}
+\newenvironment{abstract}%
+{\cleardoublepage\fncyblank\null\vfill\begin{center}%
+\bfseries\abstractname\end{center}}%
+{\vfill\null}
+
+\usepackage{graphicx}
+
+\linespread{1.3}  % aumenta l'interlinea di un fattore 1.3
+
+
+\begin{document}
+
+%\maketitle
+
+\include{frontespizio}
+
+\newpage\null\thispagestyle{empty}\newpage		%pagina bianca
+
+\frontmatter					%Attiva numerazione romana perche' sei nell'intro
+
+
+\begin{abstract}
+
+Questo lavoro si pone come obiettivi:
+\begin{enumerate}
+	\item lo studio di un'architettura multicore basata sullo scambio di messaggi sviluppata da Intel, il Single Chip Cloud Computer.
+	\item lo sviluppo su tale architettura, utilizzando il linguaggio C++, di un framework di ottimizzazione mono-obiettivo non vincolata basato su un \emph{algoritmo genetico parallelo}, ai fini di sperimentare il paradigma di programmazione a scambio di messaggi
+\end{enumerate}
+
+Le simulazioni effettuate evidenziano un graduale miglioramento dei risultati dell'ottimizzazione all'aumentare delle unità di calcolo impiegate.
+
+\end{abstract}
+
+
+\newpage\null\thispagestyle{empty}\newpage		%pagina bianca
+
+
+\tableofcontents
+\listoffigures
+
+\mainmatter					%Disattiva numerazione romana
+
+
+\input{capitolo1}
+
+\input{capitolo3}
+
+\input{bibliografia}
+
+\end{document}
+

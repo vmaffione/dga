@@ -1,0 +1,47 @@
+LIBRARY randomad32
+
+VERSION 2008.1101
+
+EXPORTS 
+        InstructionSet
+        ReadTSC
+        
+        MersenneRandomInitD
+        MersenneRandomInitByArrayD
+        MersenneRandomD
+        MersenneIRandomD
+        MersenneIRandomXD
+        MersenneBRandomD
+        
+        MersRandomInit
+        MersRandomInitByArray
+        MersRandom
+        MersIRandom
+        MersIRandomX
+        MersBRandom
+        
+        MotherRandomInitD
+        MotherRandomD
+        MotherIRandomD
+        MotherBRandomD
+
+        MotRandomInit
+        MotRandom
+        MotIRandom
+        MotBRandom
+        
+        SFMTRandomInit
+        SFMTRandomInitByArray
+        SFMTRandom
+        SFMTRandomL
+        SFMTIRandom
+        SFMTIRandomX
+        SFMTBRandom
+        
+        SFMTgenRandomInitD
+        SFMTgenRandomInitByArrayD
+        SFMTgenRandomD
+        SFMTgenRandomLD
+        SFMTgenIRandomD
+        SFMTgenIRandomXD
+        SFMTgenBRandomD
