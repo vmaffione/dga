@@ -121,7 +121,7 @@ class GeneticAlgorithm
         GeneticAlgorithm( FitnessFunctionPT ffpt, GAUtils::MutationFunctionType mft, CrossoverFunctionPT cfpt, GAUtils::SelectionFunctionType sft );
         GeneticAlgorithm( FitnessFunctionPT ffpt, GAUtils::MutationFunctionType mft, GAUtils::CrossoverFunctionType cft, GAUtils::SelectionFunctionType sft );
 
-        void run( const std::vector<IT>& initialPopulation, int maxGen, float cf, int eliteChildren, float mf, int mi ); // run the genetic algorithm with a user-provided initial population
+        void run( const std::vector<IT>& initialPopulation, int maxGen = 100, float cf = 0.8, int eliteChildren = 3, float mf = 0.1, int mi = 20 ); // run the genetic algorithm with a user-provided initial population
 
         GAUtils gaUtils;  // allows to generate random initial populations
 };
@@ -225,6 +225,10 @@ void GeneticAlgorithm<IT,OT>::commonConstructor()
         distribuitedComputation = false;
     else
         distribuitedComputation = true;
+
+    sendBuffer = receiveBuffer = NULL;
+    pointersBuffer = NULL;
+    receivedIndividualsScores = NULL;
 
     cout << "My ID is " << meshInterfacePointer->getMyID() << ", my color is " << ((myColor==MPL_RED) ? "RED" : "BLACK") << ", prevID = " << prev << ", succID = " << succ << "\n";
 
@@ -546,7 +550,7 @@ void GeneticAlgorithm<IT,OT>::gaCore()
 
 
     template <class IT, class OT>
-void GeneticAlgorithm<IT,OT>::run( const std::vector<IT>& initialPopulation, int maxGen = 100, float cf = 0.8, int eliteChildren = 3, float mf = 0.1, int mp = 20 )
+void GeneticAlgorithm<IT,OT>::run( const std::vector<IT>& initialPopulation, int maxGen, float cf, int eliteChildren, float mf, int mp)
 { 
     if ( initialPopulation.size() == 0 )
         throw GAError( "GA.run: population provided is empty" );
