@@ -7,7 +7,7 @@
 class GAError
 {
     public:
-        GAError( std::string s )
+        GAError(std::string s)
         {
             std::cout << "Error: " << s << "\n";
         }

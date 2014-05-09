@@ -7,7 +7,7 @@
 *
 * Description:
 * This header file contains function prototypes and class declarations for
-* the randoma library of uniform random number generators optimized in 
+* the randoma library of uniform random number generators optimized in
 * assembly language.
 *
 * The following random number generators are available:
@@ -16,7 +16,7 @@
 * This library is available in many versions for different platforms,
 * see ran-instructions.pdf for details.
 *
-* Copyright 1997-2010 by Agner Fog. 
+* Copyright 1997-2010 by Agner Fog.
 * GNU General Public License http://www.gnu.org/licenses/gpl.html
 *******************************************************************************
 
@@ -47,7 +47,7 @@ Generates a random integer in the interval from min to max, inclusive.
 int MersenneIRandomX(int min, int max);
 int SFMTgenIRandomX (int min, int max);
 Same as above. All possible output values have exactly the same probability
-in the IRandomX versions, whereas the IRandom versions may have a slight 
+in the IRandomX versions, whereas the IRandom versions may have a slight
 bias when the interval length is very high and not a power of 2.
 
 double MersenneRandom();
@@ -55,7 +55,7 @@ double MotherRandom();
 double SFMTgenRandom();
 long double SFMTgenRandomL();
 Generates a random number x in the interval 0 <= x < 1 with uniform distribution.
-The resolution is 2^(-32) for MersenneRandom() and MotherRandom(), 
+The resolution is 2^(-32) for MersenneRandom() and MotherRandom(),
 2^(-52) for SFMTgenRandom() and 2^(-63) for SFMTgenRandomL().
 (SFMTgenRandomL() requires that the compiler supports long double precision).
 
@@ -68,17 +68,17 @@ Generates a random 32-bit number. All 32 bits are random.
 DLL versions:
 -------------
 These functions use the __stdcall calling convention rather than __cdecl.
-They are intended for use with randomad32.dll or randomad64.dll for 
-programming languages that do not support static linking. The function 
+They are intended for use with randomad32.dll or randomad64.dll for
+programming languages that do not support static linking. The function
 names are the same as above with a D appended to the name.
 
 
 Thread-safe versions:
 ---------------------
 These functions are wrapped in the classes CRandomMersenneA, CRandomMotherA
-and CRandomSFMTA. Use these for multi-threaded applications or when an 
-object-oriented design is desired. There is no performance penalty for 
-using these classes. Each thread should have its own instance of the 
+and CRandomSFMTA. Use these for multi-threaded applications or when an
+object-oriented design is desired. There is no performance penalty for
+using these classes. Each thread should have its own instance of the
 random number generator class to prevent interaction between the threads.
 Make sure each instance has a different seed.
 
@@ -135,9 +135,9 @@ uint32_t DLL_STDCALL MersenneBRandomD();                        // Output random
 // Thread-safe library functions for Mersenne Twister.
 // The thread-safe versions have as the first parameter a pointer to a
 // private memory buffer. These functions are intended to be called from
-// the class CRandomMersenneA defined below. 
+// the class CRandomMersenneA defined below.
 // If calling from C rather than C++ then supply a private memory buffer
-// as Pthis. The necessary size of the buffer is given in the class 
+// as Pthis. The necessary size of the buffer is given in the class
 // definition below.
 #define MERS_BUFFERSIZE (192+MERS_N*4)                          // Size of internal buffer
 
@@ -166,11 +166,11 @@ double DLL_STDCALL MotherRandomD();                             // Output random
 uint32_t DLL_STDCALL MotherBRandomD();                          // Output random bits
 
 // Thread-safe library functions for Mother-of-all
-// The thread-safe versions have as the first parameter a pointer to a 
+// The thread-safe versions have as the first parameter a pointer to a
 // private memory buffer. These functions are intended to be called from
-// the class CRandomMotherA defined below. 
+// the class CRandomMotherA defined below.
 // If calling from C rather than C++ then supply a private memory buffer
-// as Pthis. The necessary size of the buffer is given in the class 
+// as Pthis. The necessary size of the buffer is given in the class
 // definition below.
 #define MOTHER_BUFFERSIZE 96                                    // Size of internal buffer
 
@@ -205,9 +205,9 @@ uint32_t DLL_STDCALL SFMTgenBRandomD();                        // Output random 
 // Thread-safe library functions for SFMT
 // The thread-safe versions have as the first parameter a pointer to a
 // private memory buffer. These functions are intended to be called from
-// the class CRandomSFMTA defined below. 
+// the class CRandomSFMTA defined below.
 // If calling from C rather than C++ then supply a private memory buffer
-// as Pthis. The necessary size of the buffer is given in the class 
+// as Pthis. The necessary size of the buffer is given in the class
 // definition below.
 #define SFMT_BUFFERSIZE (128+SFMT_N*16)                         // Size of internal buffer
 
@@ -280,7 +280,7 @@ private:
 };
 
 
-// Define size of state vector. 
+// Define size of state vector.
 // Must match the value used in the library source (randomah.asi)
 #ifndef SFMT_N
 #define SFMT_N 88
