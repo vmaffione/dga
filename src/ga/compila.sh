@@ -1,2 +1,0 @@
-#!/bin/sh
-g++ -o GAmain GAmain.cpp stoc1.cpp mesh2D.cpp randomaelf32.a /shared/vmaffione/rcce_latest/bin/SCC_LINUX/libRCCE_bigflags_nongory_nopwrmgmt.a -O3 -DCOPPERIDGE -static -march=pentium -mtune=pentium -I/shared/vmaffione/rcce_latest/include

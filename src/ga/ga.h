@@ -11,8 +11,8 @@
 
 using namespace std; // per colpa dell'operatore ostream& operator<< di IT
 
-#include "GAError.h"
-#include "GAUtils.h"
+#include "ga-error.h"
+#include "ga-utils.h"
 
 #define DEBUG 0
 
@@ -21,7 +21,7 @@ using namespace std; // per colpa dell'operatore ostream& operator<< di IT
 
 template <class IT, class OT>
 class GeneticAlgorithm
-{ 
+{
     private:
         typedef OT ( *FitnessFunctionPT )( const IT& );
         FitnessFunctionPT fitnessFunctionPointer;
@@ -56,7 +56,7 @@ class GeneticAlgorithm
         {
             int N;
             public:
-            IndividualInfo* heapArray;  // array implementing the binary-heap 
+            IndividualInfo* heapArray;  // array implementing the binary-heap
 
             InfoHeap( int n );    // only used with n == 0
             void reinit( int n );  // used to reinitialize the heap
@@ -171,7 +171,7 @@ void GeneticAlgorithm<IT,OT>::demultiplexCrossoverType( GAUtils::CrossoverFuncti
     {
         case GAUtils::CrossoverConvex:
             if ( continuousOptimization( typeid( IT ).name() ) )
-                crossoverFunctionPointerTM = &GAUtils::crossoverConvex<IT>; 
+                crossoverFunctionPointerTM = &GAUtils::crossoverConvex<IT>;
             else
                 throw GAError( "You can't use convex crossover with this input type" );
             break;
@@ -298,14 +298,14 @@ void GeneticAlgorithm<IT,OT>::stochasticUniversalSampling()
     inc  = 1.0; // inc = P/P;    /* P markers on wheel with a circumference of length P */
     mark = inc * rand_float();         /* choose position of first marker */
     while ( (--j >= 0) && (i > 0) )  /* traverse the population */
-    {   
+    {
         sum += infoHeap.heapArray[j].score;     /* compute end of wheel section */
         while (mark < sum)        /* while next marker is in the section */
-        {     
+        {
             selectedParents[--i] = infoHeap.heapArray[j].pointer; /* select the individual */
-            mark += inc; 
+            mark += inc;
         }
-    }                        
+    }
     while (--i >= 0)                                       /* if not enough individuals selected, */
         selectedParents[i] = infoHeap.heapArray[0].pointer;  /* fill with first individual (the best one) */
     /*----------------------------------------------------------------------
@@ -314,7 +314,7 @@ void GeneticAlgorithm<IT,OT>::stochasticUniversalSampling()
       roundoff errors in the fitness computations, which may cause too many
       or too few individuals getting selected.
       ----------------------------------------------------------------------*/
-} 
+}
 
 
     template <class IT, class OT>
@@ -385,14 +385,14 @@ void GeneticAlgorithm<IT,OT>::gatherResults()
 // GA engine
     template <class IT, class OT>
 void GeneticAlgorithm<IT,OT>::gaCore()
-{                                   
+{
     // evaluates fitness on the initial population
     IndividualInfo info;
     for ( int i=0; i<N; i++ )
     {
         // builds an "IndividualInfo" and inserts it into the heap
         info.pointer = &population[i];
-        info.score = ( *fitnessFunctionPointer )( population[i] ); 
+        info.score = ( *fitnessFunctionPointer )( population[i] );
         infoHeap.insert( info );
     }
 
@@ -400,12 +400,12 @@ void GeneticAlgorithm<IT,OT>::gaCore()
 
     int numGenerations = 1;
     int migrationCountdown = MP;
-    for ( ;; )  // main cycle  
+    for ( ;; )  // main cycle
     {
         infoHeap.sortLocally();  // sorts population by scaled scores
 
         //if ( meshInterfacePointer->getMyID()==0 ) cout << numGenerations << "\n";
-        if ( 1 || DEBUG /* && meshInterfacePointer->getMyID()==0 */) {  
+        if (DEBUG /* && meshInterfacePointer->getMyID()==0 */) {
             cout << "Core " << meshInterfacePointer->getMyID() << ", generazione " << numGenerations << ":\n";
             for ( int i=0; i<N; i++ )
                 cout << *(infoHeap.heapArray[i].pointer) << ", score = " << infoHeap.heapArray[i].score << "\n";
@@ -467,7 +467,7 @@ void GeneticAlgorithm<IT,OT>::gaCore()
                     infoHeap.heapArray[heapIndex].pointer = pointersBuffer[kr];
                     infoHeap.heapArray[heapIndex--].score = receivedIndividualsScores[kr--];
                 }
-            infoHeap.lastNode = N - 1; 
+            infoHeap.lastNode = N - 1;
         }
 
         performFitnessScaling();   // scales raw fitnesses
@@ -505,7 +505,7 @@ void GeneticAlgorithm<IT,OT>::gaCore()
                 ( gaUtils.*mutationFunctionPointerTM )( *( selectedParents[ spi ] ), nextPopulation[i] );
 
             if ( mutationFunctionType == GAUtils::MutationGaussian )  // refreshes mutationGaussian parameters
-                gaUtils.refreshMutationGaussianParameters( numGenerations, maxGenerations );			  
+                gaUtils.refreshMutationGaussianParameters( numGenerations, maxGenerations );			
         }
 
         // swap current and next generation
@@ -528,7 +528,7 @@ void GeneticAlgorithm<IT,OT>::gaCore()
         {	
             // builds an "IndividualInfo" and inserts it into the heap
             info.pointer = &population[i];
-            info.score = ( *fitnessFunctionPointer )( population[i] ); 
+            info.score = ( *fitnessFunctionPointer )( population[i] );
             infoHeap.insert( info );
         }
 
@@ -551,7 +551,7 @@ void GeneticAlgorithm<IT,OT>::gaCore()
 
     template <class IT, class OT>
 void GeneticAlgorithm<IT,OT>::run( const std::vector<IT>& initialPopulation, int maxGen, float cf, int eliteChildren, float mf, int mp)
-{ 
+{
     if ( initialPopulation.size() == 0 )
         throw GAError( "GA.run: population provided is empty" );
 
@@ -608,7 +608,7 @@ void GeneticAlgorithm<IT,OT>::run( const std::vector<IT>& initialPopulation, int
         nextPopulation = new IT[ N ];  // IT default constructor
         infoHeap.reinit( N );
 
-        memOptionsChanged = true;     
+        memOptionsChanged = true;
     }
 
 
@@ -637,7 +637,7 @@ void GeneticAlgorithm<IT,OT>::run( const std::vector<IT>& initialPopulation, int
         nextPopulation[i] = initialPopulation[i];
     }
 
-    if ( DEBUG ) cout << "Starting optimization...!\n";  
+    if ( DEBUG ) cout << "Starting optimization...!\n";
     gaCore();
 }
 
@@ -665,7 +665,7 @@ void GeneticAlgorithm<IT,OT>::InfoHeap::reinit( int n )
         throw GAError( " InfoHeap.init( n ): n must be > 0 " );
     if ( N != n ) // deallocates and reallocates only if necessary
     {
-        if ( N ) 
+        if ( N )
             delete [] heapArray;
         N = n;
         lastNode = -1;
@@ -693,18 +693,18 @@ void GeneticAlgorithm<IT,OT>::InfoHeap::insert( IndividualInfo element )  /// ( 
             heapArray[ parentIndex ] = heapArray[ N ];
             currentIndex = parentIndex;
         }
-        else 
+        else
             break;
     }
 }
 
     template <class IT, class OT>
 void GeneticAlgorithm<IT,OT>::InfoHeap::sortLocally()
-{ 
+{
     int hi = lastNode;
     while ( hi )
-    { 
-        // swap the root with the current actual position 
+    {
+        // swap the root with the current actual position
         heapArray[ N ] = heapArray[ 0 ];
         heapArray[ 0 ] = heapArray[ hi ];
         heapArray[ hi-- ] = heapArray[ N ];
@@ -734,12 +734,12 @@ void GeneticAlgorithm<IT,OT>::InfoHeap::sortLocally()
                     heapArray[ currentIndex ] = heapArray[ sonIndex ];
                     heapArray[ sonIndex ] = heapArray[ N ];
                     currentIndex = sonIndex;
-                } 
+                }
                 else break;
             }
             else
-                break;  
-        }  
+                break;
+        }
     }
 }
 

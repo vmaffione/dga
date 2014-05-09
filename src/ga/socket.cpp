@@ -1,4 +1,4 @@
-#include "mesh2D.h"
+#include "socket.hpp"
 #include <iostream>
 #include <vector>
 
@@ -14,12 +14,12 @@ void SccMeshInterface::MessagePassingLibraryFinalize()
 }
 
 SccMeshInterface::SccMeshInterface()
-{ 
+{
 }
 
 void SccMeshInterface::getMyMeshConfiguration( int& prev, int& succ, NodeColor& color )
 {
-    prev = succ = -1; 
+    prev = succ = -1;
 }
 
 int SccMeshInterface::getMyID()
@@ -63,7 +63,7 @@ void SccMeshInterface::receiveIndividuals( MeshByte* msg, size_t totalSize, int 
        {
        memcpy( &x, p, sizeof( float ) ); // hardcoded, of course
        cout << "rcv " << x << ", ";
-       i += sizeof( float ); 
+       i += sizeof( float );
        p += sizeof( float );
        }
        cout << "\n"; } */
