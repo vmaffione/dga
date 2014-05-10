@@ -177,19 +177,27 @@ class GeneticAlgorithm
                          GAUtils::MutationFunctionType mft,
                          CrossoverFunctionPT cfpt,
                          GAUtils::SelectionFunctionType sft);
-        GeneticAlgorithm(FitnessFunctionPT ffpt, GAUtils::MutationFunctionType mft, GAUtils::CrossoverFunctionType cft, GAUtils::SelectionFunctionType sft);
+        GeneticAlgorithm(FitnessFunctionPT ffpt,
+                         GAUtils::MutationFunctionType mft,
+                         GAUtils::CrossoverFunctionType cft,
+                         GAUtils::SelectionFunctionType sft);
 
-        void run(const std::vector<IT>& initialPopulation, int maxGen = 100, float cf = 0.8, int eliteChildren = 3, float mf = 0.1, int mi = 20); // run the genetic algorithm with a user-provided initial population
+        /* Run the genetic algorithm with a user-provided initial
+           population. */
+        void run(const std::vector<IT>& initialPopulation, int maxGen = 100,
+                 float cf = 0.8, int eliteChildren = 3, float mf = 0.1,
+                 int mi = 20);
 
-        GAUtils gaUtils;  // allows to generate random initial populations
+        /* Allows to generate random initial populations. */
+        GAUtils gaUtils;
 };
 
 
 
 
-/******************************************************************************/
-/*                      GeneticAlgorithm class implementation                 */
-/******************************************************************************/
+/***************************************************************************/
+/*                      GeneticAlgorithm class implementation              */
+/***************************************************************************/
 
 template <class IT, class OT>
 bool GeneticAlgorithm<IT,OT>::isOutputTypeValid(const char* t) const
@@ -222,23 +230,25 @@ bool GeneticAlgorithm<IT,OT>::continuousOptimization(const char* t) const
     return false;
 }
 
-    template <class IT, class OT>
-void GeneticAlgorithm<IT,OT>::demultiplexCrossoverType(GAUtils::CrossoverFunctionType cft)
+template <class IT, class OT>
+void GeneticAlgorithm<IT,OT>::demultiplexCrossoverType(
+                                        GAUtils::CrossoverFunctionType cft)
 {
-    switch (cft)
-    {
+    switch (cft) {
         case GAUtils::CrossoverConvex:
             if (continuousOptimization(typeid(IT).name()))
                 crossoverFunctionPointerTM = &GAUtils::crossoverConvex<IT>;
             else
-                throw GAError("You can't use convex crossover with this input type");
+                throw GAError("You can't use convex crossover with "
+                              "this input type");
             break;
 
         case GAUtils::CrossoverScattered:
             if (continuousOptimization(typeid(IT).name()))
                 crossoverFunctionPointerTM = &GAUtils::crossoverScattered<IT>;
             else
-                throw GAError("You can't use scattered crossover with this input type");
+                throw GAError("You can't use scattered crossover with "
+                              "this input type");
             break;
 
         default:
@@ -246,16 +256,17 @@ void GeneticAlgorithm<IT,OT>::demultiplexCrossoverType(GAUtils::CrossoverFunctio
     }
 }
 
-    template <class IT, class OT>
-void GeneticAlgorithm<IT,OT>::demultiplexMutationType(GAUtils::MutationFunctionType mft)
+template <class IT, class OT>
+void GeneticAlgorithm<IT,OT>::demultiplexMutationType(
+                                        GAUtils::MutationFunctionType mft)
 {
-    switch (mft)
-    {
+    switch (mft) {
         case GAUtils::MutationGaussian:
             if (continuousOptimization(typeid(IT).name()))
                 mutationFunctionPointerTM = &GAUtils::mutationGaussian<IT>;
             else
-                throw GAError("You can't use gaussian mutation with this input type");
+                throw GAError("You can't use gaussian mutation "
+                              "with this input type");
             break;
 
         default:
@@ -263,14 +274,15 @@ void GeneticAlgorithm<IT,OT>::demultiplexMutationType(GAUtils::MutationFunctionT
     }
 }
 
-    template <class IT, class OT>
+template <class IT, class OT>
 void GeneticAlgorithm<IT,OT>::commonConstructor()
 {
-    // Input checking
+    /* Input checking. */
     if (!isOutputTypeValid(typeid(OT).name()))
         throw GAError("Bad output type");
 
-    // the following parameters will be initialized just before running the algorithm
+    /* The following parameters will be initialized just before running
+       the algorithm. */
     N = 0;
     maxGenerations = -1; CF = -1.0; NEC = -1; MF = -1.0; MP = -1;
 
@@ -279,7 +291,7 @@ void GeneticAlgorithm<IT,OT>::commonConstructor()
     gaUtils.setMeshInterfacePointer(meshInterfacePointer);
 
     meshInterfacePointer->getMyMeshConfiguration(prev, succ, myColor);
-    if (prev == -1) // (prev==-1) if and only if (succ==-1)
+    if (prev == -1) /* (prev==-1) if and only if (succ==-1) */
         distribuitedComputation = false;
     else
         distribuitedComputation = true;
@@ -288,84 +300,140 @@ void GeneticAlgorithm<IT,OT>::commonConstructor()
     pointersBuffer = NULL;
     receivedIndividualsScores = NULL;
 
-    cout << "My ID is " << meshInterfacePointer->getMyID() << ", my color is " << ((myColor==MPL_RED) ? "RED" : "BLACK") << ", prevID = " << prev << ", succID = " << succ << "\n";
+    cout << "My ID is " << meshInterfacePointer->getMyID() <<
+            ", my color is " << ((myColor==MPL_RED) ? "RED" : "BLACK") <<
+            ", prevID = " << prev << ", succID = " << succ << "\n";
 
 }
 
-// user provided mutation function and crossover functon
-    template <class IT, class OT>
-GeneticAlgorithm<IT,OT>::GeneticAlgorithm(FitnessFunctionPT ffpt, MutationFunctionPT mfpt, CrossoverFunctionPT cfpt, GAUtils::SelectionFunctionType sft) : fitnessFunctionPointer(ffpt), mutationFunctionPointer(mfpt), mutationFunctionPointerTM(NULL), crossoverFunctionPointer(cfpt), crossoverFunctionPointerTM(NULL), SFType(sft), infoHeap(0), population(NULL), nextPopulation(NULL), selectedParents(NULL)
+/* User provided mutation function and crossover function. */
+template <class IT, class OT>
+GeneticAlgorithm<IT,OT>::GeneticAlgorithm(FitnessFunctionPT ffpt,
+                                          MutationFunctionPT mfpt,
+                                          CrossoverFunctionPT cfpt, 
+                                          GAUtils::SelectionFunctionType sft
+                                        ) : fitnessFunctionPointer(ffpt), 
+                                            mutationFunctionPointer(mfpt),
+                                            mutationFunctionPointerTM(NULL),
+                                            crossoverFunctionPointer(cfpt),
+                                            crossoverFunctionPointerTM(NULL),
+                                            SFType(sft), infoHeap(0),
+                                            population(NULL),
+                                            nextPopulation(NULL),
+                                            selectedParents(NULL)
 {
     commonConstructor();
     std::cout << "A genetic algorithm object was generated!\n";
 }
 
-// user provided mutation function and library local crossover functon
-    template <class IT, class OT>
-GeneticAlgorithm<IT,OT>::GeneticAlgorithm(FitnessFunctionPT ffpt, MutationFunctionPT mfpt, GAUtils::CrossoverFunctionType cft, GAUtils::SelectionFunctionType sft) : fitnessFunctionPointer(ffpt), mutationFunctionPointer(mfpt), mutationFunctionPointerTM(NULL), crossoverFunctionPointer(NULL), SFType(sft), infoHeap(0), population(NULL), nextPopulation(NULL), selectedParents(NULL)
+/* User provided mutation function and library local crossover function. */
+template <class IT, class OT>
+GeneticAlgorithm<IT,OT>::GeneticAlgorithm(FitnessFunctionPT ffpt,
+                                          MutationFunctionPT mfpt,
+                                          GAUtils::CrossoverFunctionType cft,
+                                          GAUtils::SelectionFunctionType sft
+                                        ) : fitnessFunctionPointer(ffpt),
+                                            mutationFunctionPointer(mfpt),
+                                            mutationFunctionPointerTM(NULL),
+                                            crossoverFunctionPointer(NULL),
+                                            SFType(sft), infoHeap(0),
+                                            population(NULL),
+                                            nextPopulation(NULL),
+                                            selectedParents(NULL)
 {
     commonConstructor();
-    // demultiplexing crossover function enumeration
+    /* Demultiplexing crossover function enumeration. */
     demultiplexCrossoverType(cft);
     std::cout << "A genetic algorithm object was generated!\n";
 }
 
-// library local mutation function and user provided crossover functon
-    template <class IT, class OT>
-GeneticAlgorithm<IT,OT>::GeneticAlgorithm(FitnessFunctionPT ffpt, GAUtils::MutationFunctionType mft, CrossoverFunctionPT cfpt, GAUtils::SelectionFunctionType sft) : fitnessFunctionPointer(ffpt), mutationFunctionPointer(NULL), mutationFunctionType(mft), crossoverFunctionPointer(cfpt), crossoverFunctionPointerTM(NULL), SFType(sft), infoHeap(0), population(NULL), nextPopulation(NULL), selectedParents(NULL)
+/* library local mutation function and user provided crossover function. */
+template <class IT, class OT>
+GeneticAlgorithm<IT,OT>::GeneticAlgorithm(FitnessFunctionPT ffpt,
+                                          GAUtils::MutationFunctionType mft,
+                                          CrossoverFunctionPT cfpt,
+                                          GAUtils::SelectionFunctionType sft
+                                        ) : fitnessFunctionPointer(ffpt),
+                                            mutationFunctionPointer(NULL),
+                                            mutationFunctionType(mft),
+                                            crossoverFunctionPointer(cfpt),
+                                            crossoverFunctionPointerTM(NULL),
+                                            SFType(sft), infoHeap(0),
+                                            population(NULL),
+                                            nextPopulation(NULL),
+                                            selectedParents(NULL)
 {
     commonConstructor();
-    // demultiplexing mutation function enumeration
+    /* Demultiplexing mutation function enumeration. */
     demultiplexMutationType(mft);
     std::cout << "A genetic algorithm object was generated!\n";
 }
 
 
 
-// library local mutation function and crossover functon
-    template <class IT, class OT>
-GeneticAlgorithm<IT,OT>::GeneticAlgorithm(FitnessFunctionPT ffpt, GAUtils::MutationFunctionType mft, GAUtils::CrossoverFunctionType cft, GAUtils::SelectionFunctionType sft) : fitnessFunctionPointer(ffpt), mutationFunctionPointer(NULL), mutationFunctionType(mft), crossoverFunctionPointer(NULL), SFType(sft), infoHeap(0), population(NULL), nextPopulation(NULL), selectedParents(NULL)
+/* Library local mutation function and crossover function. */
+template <class IT, class OT>
+GeneticAlgorithm<IT,OT>::GeneticAlgorithm(FitnessFunctionPT ffpt,
+                                          GAUtils::MutationFunctionType mft,
+                                          GAUtils::CrossoverFunctionType cft,
+                                          GAUtils::SelectionFunctionType sft
+                                        ) : fitnessFunctionPointer(ffpt),
+                                            mutationFunctionPointer(NULL),
+                                            mutationFunctionType(mft),
+                                            crossoverFunctionPointer(NULL),
+                                            SFType(sft), infoHeap(0),
+                                            population(NULL),
+                                            nextPopulation(NULL),
+                                            selectedParents(NULL)
 {
     commonConstructor();
-    // demultiplexing crossover function enumeration
+    /* Demultiplexing crossover function enumeration */
     demultiplexCrossoverType(cft);
-    // demultiplexing mutation function enumeration
+    /* Demultiplexing mutation function enumeration. */
     demultiplexMutationType(mft);
     std::cout << "A genetic algorithm object was generated!\n";
 }
 
-    template <class IT, class OT>
+template <class IT, class OT>
 void GeneticAlgorithm<IT,OT>::performFitnessScaling()
 {
-    // this function assumes the heap is full
-    if (infoHeap.size() != N)
-        throw GAError("Bug: la funzione che effettua il fitness scaling ha trovato l'heap non pieno");
-    for (int i=0; i<N; i++)
+    /* This function assumes the heap is full. */
+    if (infoHeap.size() != N) {
+        throw GAError("Bug: la funzione che effettua il fitness scaling "
+                      "ha trovato l'heap non pieno");
+    }
+    for (int i=0; i<N; i++) {
         infoHeap.heapArray[i].score = scalingCoeff / sqrt(i + 1);
+    }
 }
 
-    template <class IT, class OT>
+template <class IT, class OT>
 void GeneticAlgorithm<IT,OT>::stochasticUniversalSampling()
 {
     /* --- stochastic universal sampling --- */
-    int i = P;                   /* number of individuals to select */
-    int j = N;                   /* population size*/
-    float sum = 0;               /* sum of relative fitness values (cumulative fitness value) */
-    float mark, inc;             /* marker position and increment */
+    int i = P;      /* number of individuals to select */
+    int j = N;      /* population size*/
+    float sum = 0;  /* sum of relative fitness values
+                       (cumulative fitness value) */
+    float mark, inc; /* marker position and increment */
 
-    inc  = 1.0; // inc = P/P;    /* P markers on wheel with a circumference of length P */
-    mark = inc * rand_float();         /* choose position of first marker */
-    while ((--j >= 0) && (i > 0))  /* traverse the population */
+    inc  = 1.0; /* P markers on wheel with a circumference of length P */
+    mark = inc * rand_float(); /* choose position of first marker */
+    while ((--j >= 0) && (i > 0)) /* traverse the population */
     {
-        sum += infoHeap.heapArray[j].score;     /* compute end of wheel section */
-        while (mark < sum)        /* while next marker is in the section */
+        sum += infoHeap.heapArray[j].score; /* compute end of wheel section */
+        while (mark < sum)  /* while next marker is in the section */
         {
-            selectedParents[--i] = infoHeap.heapArray[j].pointer; /* select the individual */
+            /* Select the individual. */
+            selectedParents[--i] = infoHeap.heapArray[j].pointer;
             mark += inc;
         }
     }
-    while (--i >= 0)                                       /* if not enough individuals selected, */
-        selectedParents[i] = infoHeap.heapArray[0].pointer;  /* fill with first individual (the best one) */
+
+    /* If not enough individuals selected, fill with first individual
+       (the best one) */
+    while (--i >= 0) 
+        selectedParents[i] = infoHeap.heapArray[0].pointer;
     /*----------------------------------------------------------------------
       The check for (i > 0) in the outer while loop as well as the loop that
       fills the vector of selected individuals are needed due to possible
@@ -375,28 +443,33 @@ void GeneticAlgorithm<IT,OT>::stochasticUniversalSampling()
 }
 
 
-    template <class IT, class OT>
+template <class IT, class OT>
 void GeneticAlgorithm<IT,OT>::performParentsSelection()
 {
     switch (SFType)
     {
-        case GAUtils::SUS:  // Stochastic universal sampling
+        case GAUtils::SUS:  /* Stochastic universal sampling. */
             stochasticUniversalSampling();
             break;
         case GAUtils::RWS:
             throw GAError("RWS not yet implemented");
             break;
     }
-    //for (int i=0; i<P; i++) cout << *(selectedParents[i]) << ", "; cout << "\n";
+    /* for (int i=0; i<P; i++)
+        cout << *(selectedParents[i]) << ", "; cout << "\n";
+    */
 }
 
-    template <class IT, class OT>
+template <class IT, class OT>
 void GeneticAlgorithm<IT,OT>::shuffleParents()
 {
-    // shuffle array selectedParents implementing Fisher–Yates method (Durstenfeld version)
+    /* Shuffle array selectedParents implementing Fisher–Yates method
+       (Durstenfeld version). */
     for (int i=P-1; i>0; i--)
     {
-        int j = rand_int(0, i);  // generate a random integer number between 0 and i (included)
+        /* Generate a random integer number between 0 and i (included). */
+        int j = rand_int(0, i);
+
         IT* tmp = selectedParents[i];
         selectedParents[i] = selectedParents[j];
         selectedParents[j] = tmp;
@@ -404,7 +477,7 @@ void GeneticAlgorithm<IT,OT>::shuffleParents()
 }
 
 
-    template <class IT, class OT>
+template <class IT, class OT>
 void GeneticAlgorithm<IT,OT>::gatherResults()
 {
     if (meshInterfacePointer->getMyID() == 0)
@@ -412,20 +485,26 @@ void GeneticAlgorithm<IT,OT>::gatherResults()
         int numCores = meshInterfacePointer->numberOfActiveCores();
         IT** bestIndividuals = new IT*[numCores];
         OT* bestScores = new  OT[numCores];
-        for (int i=0; i<numCores; i++)
-            bestIndividuals[i] = new IT(population[0]); // we do this copy only to call the copy constructor, so that memory is allocated for the new objects (if necessary)
+        for (int i=0; i<numCores; i++) {
+            /* We do this copy only to call the copy constructor, so that
+               memory is allocated for the new objects (if necessary). */
+            bestIndividuals[i] = new IT(population[0]);
+        }
 
         bestIndividuals[0] = infoHeap.heapArray[0].pointer;
         bestScores[0] = infoHeap.heapArray[0].score;
         for (int i=1; i<numCores; i++)
         {
-            meshInterfacePointer->receiveIndividuals(receiveBuffer, sizeof(IT), i);
-            gaUtils.deserializeAndCopy<IT>(receiveBuffer, &bestIndividuals[i], 1);
+            meshInterfacePointer->receiveIndividuals(receiveBuffer,
+                                                     sizeof(IT), i);
+            gaUtils.deserializeAndCopy<IT>(receiveBuffer,
+                                           &bestIndividuals[i], 1);
             bestScores[i] = (*fitnessFunctionPointer)(*(bestIndividuals[i])) ;
         }
         cout << "Global best individuals:\n";
         for (int i=0; i<numCores; i++)
-            cout << "(" << i + 1 << ")  " << *(bestIndividuals[i]) << ", score = " << bestScores[i] << "\n";
+            cout << "(" << i + 1 << ")  " << *(bestIndividuals[i]) <<
+                    ", score = " << bestScores[i] << "\n";
         delete [] bestIndividuals;
         delete [] bestScores;
     }
@@ -440,133 +519,181 @@ void GeneticAlgorithm<IT,OT>::gatherResults()
 }
 
 
-// GA engine
-    template <class IT, class OT>
+/* GA engine. */
+template <class IT, class OT>
 void GeneticAlgorithm<IT,OT>::gaCore()
 {
-    // evaluates fitness on the initial population
+    /* Evaluates fitness on the initial population. */
     IndividualInfo info;
     for (int i=0; i<N; i++)
     {
-        // builds an "IndividualInfo" and inserts it into the heap
+        /* Builds an "IndividualInfo" and inserts it into the heap. */
         info.pointer = &population[i];
         info.score = (*fitnessFunctionPointer)(population[i]);
         infoHeap.insert(info);
     }
 
-    rand_init(GA_BASE_SEED + GA_MUL_SEED * meshInterfacePointer->getMyID());   // initializes random generator
+    /* Initializes random generator. */
+    rand_init(GA_BASE_SEED + GA_MUL_SEED * meshInterfacePointer->getMyID());
 
     int numGenerations = 1;
     int migrationCountdown = MP;
-    for (;;)  // main cycle
-    {
-        infoHeap.sortLocally();  // sorts population by scaled scores
 
-        //if (meshInterfacePointer->getMyID()==0) cout << numGenerations << "\n";
+    /* Main loop. */
+    for (;;)
+    {
+        /* Sorts population by scaled scores. */
+        infoHeap.sortLocally();
+
         if (DEBUG /* && meshInterfacePointer->getMyID()==0 */) {
-            cout << "Core " << meshInterfacePointer->getMyID() << ", generazione " << numGenerations << ":\n";
+            cout << "Core " << meshInterfacePointer->getMyID() <<
+                    ", generazione " << numGenerations << ":\n";
             for (int i=0; i<N; i++)
-                cout << *(infoHeap.heapArray[i].pointer) << ", score = " << infoHeap.heapArray[i].score << "\n";
+                cout << *(infoHeap.heapArray[i].pointer) <<
+                        ", score = " << infoHeap.heapArray[i].score << "\n";
         }
 
-        if (distribuitedComputation && migrationCountdown == 0)  // carries out migration procedures
+        /* Carries out migration procedures. */
+        if (distribuitedComputation && migrationCountdown == 0)
         {
             migrationCountdown = MP;
 
-            // gets the pointers to the best NMI individuals (here infoHeap.heapArray is sorted, so we can pick the first elements)
+            /* Gets the pointers to the best NMI individuals (here
+               infoHeap.heapArray is sorted, so we can pick the first
+               elements). */
             for (int i=0; i<NMI; i++)
                 pointersBuffer[i] = infoHeap.heapArray[i].pointer;
-            // serializes and puts the best NMI individuals in the output buffer
+
+            /* Serializes and puts the best NMI individuals in the output
+               buffer. */
             gaUtils.serializeAndCopy<IT>(sendBuffer, pointersBuffer, NMI);
 
-            /*cout << "Sending... \n";
-              for (int i=0; i<NMI; i++)
-              cout << *(pointersBuffer[i]) << "\n";
-              cout << "\n";*/
-
-            if (myColor == MPL_RED)
-            {
-                meshInterfacePointer->sendIndividuals(sendBuffer, NMI * sizeof(IT), succ);
-                meshInterfacePointer->receiveIndividuals(receiveBuffer, NMI * sizeof(IT), prev);
-            }
-            else // (myColor == MPL_BLACK)
-            {
-                meshInterfacePointer->receiveIndividuals(receiveBuffer, NMI * sizeof(IT), prev);
-                meshInterfacePointer->sendIndividuals(sendBuffer, NMI * sizeof(IT), succ);
-            }
-
-            // discards the NMI worst individuals (infoHeap.heapArray is sorted) by decreasing infoheap.lastNode, and puts their address in pointersBuffer
+            /*
+            cout << "Sending... \n";
             for (int i=0; i<NMI; i++)
-                pointersBuffer[i] = infoHeap.heapArray[infoHeap.lastNode--].pointer;
-            // deserializes the message received and replaces discarded individuals with the received ones
+            cout << *(pointersBuffer[i]) << "\n";
+            cout << "\n";
+            */
+
+            if (myColor == MPL_RED) {
+                meshInterfacePointer->sendIndividuals(sendBuffer,
+                                                      NMI * sizeof(IT), succ);
+                meshInterfacePointer->receiveIndividuals(receiveBuffer,
+                                                         NMI * sizeof(IT),
+                                                         prev);
+            } else /* (myColor == MPL_BLACK) */ {
+                meshInterfacePointer->receiveIndividuals(receiveBuffer,
+                                                         NMI * sizeof(IT),
+                                                         prev);
+                meshInterfacePointer->sendIndividuals(sendBuffer,
+                                                      NMI * sizeof(IT), succ);
+            }
+
+            /* Discards the NMI worst individuals (infoHeap.heapArray is
+               sorted) by decreasing infoheap.lastNode, and puts their
+               address in pointersBuffer. */
+            for (int i=0; i<NMI; i++)
+                pointersBuffer[i] =
+                            infoHeap.heapArray[infoHeap.lastNode--].pointer;
+            /* Deserializes the message received and replaces discarded
+               individuals with the received ones. */
             gaUtils.deserializeAndCopy<IT>(receiveBuffer, pointersBuffer, NMI);
 
-            /*cout << "Receiveing... \n";
-              for (int i=0; i<NMI; i++)
-              cout << *(pointersBuffer[i]) << "\n";
-              cout << "\n"; */
-
-            // computes the fitness of the new individuals
+            /*
+            cout << "Receiveing... \n";
             for (int i=0; i<NMI; i++)
-                receivedIndividualsScores[i] = (*fitnessFunctionPointer)(*(pointersBuffer[i]));
+            cout << *(pointersBuffer[i]) << "\n";
+            cout << "\n";
+            */
 
-            // merges new individuals with local individuals
+            /* Computes the fitness of the new individuals. */
+            for (int i=0; i<NMI; i++) {
+                receivedIndividualsScores[i] =
+                            (*fitnessFunctionPointer)(*(pointersBuffer[i]));
+            }
+
+            /* Merges new individuals with local individuals. */
             int kr = NMI - 1,
                 kh = infoHeap.lastNode,
                 heapIndex = N - 1;
             while (heapIndex >= 0)
-                if (infoHeap.heapArray[kh].score > receivedIndividualsScores[kr])
-                {
-                    infoHeap.heapArray[heapIndex].pointer = infoHeap.heapArray[kh].pointer;
-                    infoHeap.heapArray[heapIndex--].score = infoHeap.heapArray[kh--].score;
-                }
-                else
-                {
-                    infoHeap.heapArray[heapIndex].pointer = pointersBuffer[kr];
-                    infoHeap.heapArray[heapIndex--].score = receivedIndividualsScores[kr--];
+                if (infoHeap.heapArray[kh].score >
+                    receivedIndividualsScores[kr]) {
+                    infoHeap.heapArray[heapIndex].pointer =
+                                    infoHeap.heapArray[kh].pointer;
+                    infoHeap.heapArray[heapIndex--].score =
+                                    infoHeap.heapArray[kh--].score;
+                } else {
+                    infoHeap.heapArray[heapIndex].pointer =
+                                            pointersBuffer[kr];
+                    infoHeap.heapArray[heapIndex--].score =
+                                            receivedIndividualsScores[kr--];
                 }
             infoHeap.lastNode = N - 1;
         }
 
-        performFitnessScaling();   // scales raw fitnesses
+        /* Scales raw fitnesses. */
+        performFitnessScaling();
 
-        performParentsSelection();  // selects parents for reproduction
+        /* Selects parents for reproduction. */
+        performParentsSelection();
 
-        /* crossover function are designed in such a way that only parents which are
-           consecutive in the array "selectedParents" are going to mating; moreover,
-           crossover is performed only over the elements [0:CP-1], while mutation is
-           performed on the elements [CP:P-1]; for these reasons at this point we
-           have to shuffle the array by generating a random permutation */
+        /* Crossover function are designed in such a way that only parents
+           which are consecutive in the array "selectedParents" are going to
+           mating; moreover, crossover is performed only over the elements
+           [0:CP-1], while mutation is performed on the elements [CP:P-1];
+           for these reasons at this point we have to shuffle the array by
+           generating a random permutation.
+        */
         shuffleParents();
 
-        // generate the elite children copying the best individuals of the current population
+        /* Generate the elite children copying the best individuals of the
+           current population. */
         for (int i=0; i<NEC; i++)
             nextPopulation[i] = *(infoHeap.heapArray[i].pointer);
 
-        // performs crossover and stores resulting children in nextPopulation[0:NCC-1]
-        if (crossoverFunctionPointer != NULL) // calls user provided (global) function
+        /* Performs crossover and stores resulting children in
+           nextPopulation[0:NCC-1]. */
+        if (crossoverFunctionPointer != NULL) {
+            /* Calls user provided (global) function. */
             for (int i=NEC, spi=0; i<NEC+NCC; i++, spi+=2)
-                (*crossoverFunctionPointer)(*(selectedParents[ spi ]), *(selectedParents[ spi+1 ]), nextPopulation[i]);
-        else  // calls GAUtils member function, by deferentiating the pointer to member
+                (*crossoverFunctionPointer)(*(selectedParents[ spi ]),
+                                            *(selectedParents[ spi+1 ]),
+                                            nextPopulation[i]);
+        } else {
+            /* Calls GAUtils member function, by deferentiating the
+               pointer to member. */
             for (int i=NEC, spi=0; i<NEC+NCC; i++, spi+=2)
-                (gaUtils.*crossoverFunctionPointerTM)(*(selectedParents[ spi ]), *(selectedParents[ spi+1 ]), nextPopulation[i]);
-
-
-
-        // performs mutation and stores resulting children in nextPopulation[NCC:N-1]
-        if (mutationFunctionPointer != NULL) // calls user provided (global) function
-            for (int i=NEC+NCC, spi=CP; i<N; i++, spi++)
-                (*mutationFunctionPointer)(*(selectedParents[ spi ]), nextPopulation[i]);
-        else  // calls GAUtils member function, by deferentiating the pointer to member
-        {
-            for (int i=NEC+NCC, spi=CP; i<N; i++, spi++)
-                (gaUtils.*mutationFunctionPointerTM)(*(selectedParents[ spi ]), nextPopulation[i]);
-
-            if (mutationFunctionType == GAUtils::MutationGaussian)  // refreshes mutationGaussian parameters
-                gaUtils.refreshMutationGaussianParameters(numGenerations, maxGenerations);
+                (gaUtils.*crossoverFunctionPointerTM)(
+                                            *(selectedParents[ spi ]),
+                                            *(selectedParents[ spi+1 ]),
+                                            nextPopulation[i]);
         }
 
-        // swap current and next generation
+
+
+        /* Performs mutation and stores resulting children in
+           nextPopulation[NCC:N-1]. */
+        if (mutationFunctionPointer != NULL) {
+            /* Calls user provided (global) function. */
+            for (int i=NEC+NCC, spi=CP; i<N; i++, spi++)
+                (*mutationFunctionPointer)(*(selectedParents[ spi ]),
+                                           nextPopulation[i]);
+        } else {
+            /* Calls GAUtils member function, by deferentiating the
+               pointer to member. */
+            for (int i=NEC+NCC, spi=CP; i<N; i++, spi++)
+                (gaUtils.*mutationFunctionPointerTM)(
+                                            *(selectedParents[ spi ]),
+                                            nextPopulation[i]);
+
+            /* Refreshes mutationGaussian parameters. */
+            if (mutationFunctionType == GAUtils::MutationGaussian)
+                gaUtils.refreshMutationGaussianParameters(numGenerations,
+                                                          maxGenerations);
+        }
+
+        /* Swap current and next generation. */
         IT* tmp = population;
         population = nextPopulation;
         nextPopulation = tmp;
@@ -579,12 +706,12 @@ void GeneticAlgorithm<IT,OT>::gaCore()
            cout << "\n";
            }cout << "\n";system("PAUSE");*/
 
-        // evaluates fitness on the new population and builds the new heap
+        /* Evaluates fitness on the new population and builds the new heap. */
         infoHeap.reset();
         IndividualInfo info;
         for (int i=0; i<N; i++)
         {
-            // builds an "IndividualInfo" and inserts it into the heap
+            /* Builds an "IndividualInfo" and inserts it into the heap. */
             info.pointer = &population[i];
             info.score = (*fitnessFunctionPointer)(population[i]);
             infoHeap.insert(info);
@@ -600,38 +727,44 @@ void GeneticAlgorithm<IT,OT>::gaCore()
 
     if (!DEBUG) {
         cout << "Optimization terminated! Best results:\n";
-        for (int i=0; i<((N>3) ? 3 : N); i++) cout << "(" << i+1 << ") " << *(infoHeap.heapArray[i].pointer) << ", score " << infoHeap.heapArray[i].score << "\n"; cout << "\n";
+        for (int i=0; i<((N>3) ? 3 : N); i++)
+            cout << "(" << i+1 << ") " << *(infoHeap.heapArray[i].pointer) <<
+                    ", score " << infoHeap.heapArray[i].score << "\n";
+        cout << "\n";
     }
 
     gatherResults();
 }
 
 
-    template <class IT, class OT>
-void GeneticAlgorithm<IT,OT>::run(const std::vector<IT>& initialPopulation, int maxGen, float cf, int eliteChildren, float mf, int mp)
+template <class IT, class OT>
+void GeneticAlgorithm<IT,OT>::run(const std::vector<IT>& initialPopulation,
+                                  int maxGen, float cf, int eliteChildren,
+                                  float mf, int mp)
 {
     if (initialPopulation.size() == 0)
         throw GAError("GA.run: population provided is empty");
 
-
     bool memOptionsChanged = false;
-    // refresh options which require memory allocation only if suitable
+
+    /* Refresh options which require memory allocation only if suitable. */
     maxGenerations = maxGen;
-    if (cf != CF && cf >= 0.0 && cf <= 1.0)
-    {
+    if (cf != CF && cf >= 0.0 && cf <= 1.0) {
         CF = cf;
         memOptionsChanged = true;
     }
-    if (eliteChildren != NEC && eliteChildren >= 0 && eliteChildren <= initialPopulation.size())
-    {
+
+    if (eliteChildren != NEC && eliteChildren >= 0 &&
+        eliteChildren <= initialPopulation.size()) {
         NEC = eliteChildren;
         memOptionsChanged = true;
     }
-    if (mf != MF && mf >= 0.0 and mf <=1.0)
-    {
+
+    if (mf != MF && mf >= 0.0 and mf <=1.0) {
         MF = mf;
         NMI = static_cast< int >(initialPopulation.size() * mf);
-        if (mf > 0.0 && NMI == 0) // NMI==0 only if mf = 0.0 (isolated computation)
+        /* NMI==0 only if mf = 0.0 (isolated computation). */
+        if (mf > 0.0 && NMI == 0)
             NMI = 1;
 
         if (sendBuffer != NULL)
@@ -649,9 +782,10 @@ void GeneticAlgorithm<IT,OT>::run(const std::vector<IT>& initialPopulation, int 
     if (mp > 0)
         MP = mp;
 
-    // initializes class GeneticAlgorithm
-    if (initialPopulation.size() != N)  // allocates memory and refreshes options only if necessary
+    /* Initializes class GeneticAlgorithm. */
+    if (initialPopulation.size() != N)
     {
+        /* Allocates memory and refreshes options only if necessary. */
         N = initialPopulation.size();
 
         if (population != NULL)
@@ -661,28 +795,29 @@ void GeneticAlgorithm<IT,OT>::run(const std::vector<IT>& initialPopulation, int 
         }
 
 
-        //cout << "Parameters: " <<  CF << ", " << NEC << ", " << maxGenerations << "\n";
-        population = new IT[ N ];      // IT default constructor
-        nextPopulation = new IT[ N ];  // IT default constructor
+        /*cout << "Parameters: " <<  CF << ", " << NEC << ", "
+                << maxGenerations << "\n"; */
+        population = new IT[ N ];      /* IT default constructor. */
+        nextPopulation = new IT[ N ];  /* IT default constructor. */
         infoHeap.reinit(N);
 
         memOptionsChanged = true;
     }
 
 
-    if (memOptionsChanged)  // da raffinare!!
-    {
-        // initialize population parameters
+    if (memOptionsChanged) { /* TODO da raffinare!! */
+        /* Initialize population parameters. */
         NCC = static_cast<int>(CF * (N - NEC));
         NMC = N - NEC - NCC;
-        // two parents for each crossover-generated child and one parent for each mutation generated child
+        /* Two parents for each crossover-generated child and one parent
+           for each mutation generated child. */
         CP =  2 * NCC;
         P = CP + NMC;
 
         delete [] selectedParents;
         selectedParents = new IT*[ P ];
 
-        // compute scaling coefficient (fitness scaling)
+        /* Compute scaling coefficient (fitness scaling). */
         scalingCoeff = 0.0;
         for (int i=1; i<=N; i++)
             scalingCoeff += 1/sqrt(i);
@@ -691,7 +826,9 @@ void GeneticAlgorithm<IT,OT>::run(const std::vector<IT>& initialPopulation, int 
 
     for (int i=0; i<N; i++)
     {
-        population[i] = initialPopulation[i];  /* IT assignment operator, which is assumed to allocate memory (so nextPopulation is initialized) */
+        /* IT assignment operator, which is assumed to allocate memory
+           (so nextPopulation is initialized) */
+        population[i] = initialPopulation[i];
         nextPopulation[i] = initialPopulation[i];
     }
 
@@ -703,49 +840,54 @@ void GeneticAlgorithm<IT,OT>::run(const std::vector<IT>& initialPopulation, int 
 
 
 
-/* ---------------------------------------------------------------------------*/
-/*                    InfoHeap class implementation                           */
-/* ---------------------------------------------------------------------------*/
+/* -------------------------------------------------------------------------*/
+/*                    InfoHeap class implementation                         */
+/* -------------------------------------------------------------------------*/
 
-// not used at the moment
-    template <class IT, class OT>
+/* Not used at the moment. */
+template <class IT, class OT>
 GeneticAlgorithm<IT,OT>::InfoHeap::InfoHeap(int n) : lastNode(-1), N(n)
 {
-    if (n > 0)
-        heapArray = new IndividualInfo[ n + 1 ];  // the last position is reserved and used as a "swap area"
-    // else do nothing
+    if (n > 0) {
+        /* The last position is reserved and used as a "swap area". */
+        heapArray = new IndividualInfo[ n + 1 ];
+    }
 }
 
-    template <class IT, class OT>
+template <class IT, class OT>
 void GeneticAlgorithm<IT,OT>::InfoHeap::reinit(int n)
 {
     if (n <= 0)
         throw GAError(" InfoHeap.init(n): n must be > 0 ");
-    if (N != n) // deallocates and reallocates only if necessary
-    {
+    if (N != n) {
+        /* Deallocates and reallocates only if necessary. */
         if (N)
             delete [] heapArray;
         N = n;
         lastNode = -1;
-        heapArray = new IndividualInfo[ N + 1 ];  // the last position is reserved and used as a "swap area"
+        /* The last position is reserved and used as a "swap area". */
+        heapArray = new IndividualInfo[ N + 1 ];
     }
 }
 
-    template <class IT, class OT>
-void GeneticAlgorithm<IT,OT>::InfoHeap::insert(IndividualInfo element)  /// (const IndividualInfo& element)     ?????
+// XXX (const IndividualInfo& element)     ?????
+template <class IT, class OT>
+void GeneticAlgorithm<IT,OT>::InfoHeap::insert(IndividualInfo element)
 {
     //cout << "heap last position = " << lastNode+1 << "\n";
     if (lastNode == N-1)
-        throw GAError("Bug: lo heap è andato in overflow durante un tentativo di inserimento");
+        throw GAError("Bug: lo heap è andato in overflow durante un "
+                      "tentativo di inserimento");
     heapArray[ ++lastNode ] = element;
-    // execute the "up" procedure iteratively
+
+    /* Execute the "up" procedure iteratively. */
     int currentIndex = lastNode, parentIndex;
     for (;;)
     {
         parentIndex = (currentIndex - 1) / 2;
         if (heapArray[ currentIndex ].score > heapArray[ parentIndex ].score)
         {
-            // swaps using the "swap area"
+            /* Swaps using the "swap area". */
             heapArray[ N ] = heapArray[ currentIndex ];
             heapArray[ currentIndex ] = heapArray[ parentIndex ];
             heapArray[ parentIndex ] = heapArray[ N ];
@@ -756,46 +898,41 @@ void GeneticAlgorithm<IT,OT>::InfoHeap::insert(IndividualInfo element)  /// (con
     }
 }
 
-    template <class IT, class OT>
+template <class IT, class OT>
 void GeneticAlgorithm<IT,OT>::InfoHeap::sortLocally()
 {
     int hi = lastNode;
-    while (hi)
-    {
-        // swap the root with the current actual position
+    while (hi) {
+        /* Swap the root with the current actual position. */
         heapArray[ N ] = heapArray[ 0 ];
         heapArray[ 0 ] = heapArray[ hi ];
         heapArray[ hi-- ] = heapArray[ N ];
 
-        // execute the "down" procedure iteratively
+        /* Execute the "down" procedure iteratively. */
         int currentIndex = 0, sonIndex;
-        for (;;)
-        {
+        for (;;) {
             sonIndex = 2 * currentIndex + 1;
-            if (sonIndex == hi)
-            {
-                if (heapArray[ sonIndex ].score > heapArray[ currentIndex ].score)
-                {
+            if (sonIndex == hi) {
+                if (heapArray[ sonIndex ].score >
+                        heapArray[ currentIndex ].score) {
                     heapArray[ N ] = heapArray[ currentIndex ];
                     heapArray[ currentIndex ] = heapArray[ sonIndex ];
                     heapArray[ sonIndex ] = heapArray[ N ];
                 }
                 break;
-            }
-            else if (sonIndex < hi)
-            {
-                if (heapArray[ sonIndex + 1 ].score > heapArray[ sonIndex ].score)
+            } else if (sonIndex < hi) {
+                if (heapArray[ sonIndex + 1 ].score >
+                        heapArray[ sonIndex ].score)
                     sonIndex++;
-                if (heapArray[ sonIndex ].score > heapArray[ currentIndex ].score)
-                {
+                if (heapArray[ sonIndex ].score >
+                        heapArray[ currentIndex ].score) {
                     heapArray[ N ] = heapArray[ currentIndex ];
                     heapArray[ currentIndex ] = heapArray[ sonIndex ];
                     heapArray[ sonIndex ] = heapArray[ N ];
                     currentIndex = sonIndex;
-                }
-                else break;
-            }
-            else
+                } else
+                    break;
+            } else
                 break;
         }
     }
@@ -806,7 +943,8 @@ template <class IT, class OT>
 void GeneticAlgorithm<IT,OT>::InfoHeap::print() const
 {
     for (int i=0; i<N; i++)
-        std::cout << "Individual: " << (*(heapArray[i].pointer)) << ", score = " << heapArray[i].score << "\n";
+        std::cout << "Individual: " << (*(heapArray[i].pointer)) <<
+                     ", score = " << heapArray[i].score << "\n";
 }
 
 #endif
