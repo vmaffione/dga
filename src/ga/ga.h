@@ -304,6 +304,8 @@ void GeneticAlgorithm<IT,OT>::commonConstructor()
             ", my color is " << ((myColor==MPL_RED) ? "RED" : "BLACK") <<
             ", prevID = " << prev << ", succID = " << succ << "\n";
 
+    std::cout << "A genetic algorithm object was generated!\n";
+
 }
 
 /* User provided mutation function and crossover function. */
@@ -323,7 +325,6 @@ GeneticAlgorithm<IT,OT>::GeneticAlgorithm(FitnessFunctionPT ffpt,
                                             selectedParents(NULL)
 {
     commonConstructor();
-    std::cout << "A genetic algorithm object was generated!\n";
 }
 
 /* User provided mutation function and library local crossover function. */
@@ -344,7 +345,6 @@ GeneticAlgorithm<IT,OT>::GeneticAlgorithm(FitnessFunctionPT ffpt,
     commonConstructor();
     /* Demultiplexing crossover function enumeration. */
     demultiplexCrossoverType(cft);
-    std::cout << "A genetic algorithm object was generated!\n";
 }
 
 /* library local mutation function and user provided crossover function. */
@@ -366,7 +366,6 @@ GeneticAlgorithm<IT,OT>::GeneticAlgorithm(FitnessFunctionPT ffpt,
     commonConstructor();
     /* Demultiplexing mutation function enumeration. */
     demultiplexMutationType(mft);
-    std::cout << "A genetic algorithm object was generated!\n";
 }
 
 
@@ -391,7 +390,6 @@ GeneticAlgorithm<IT,OT>::GeneticAlgorithm(FitnessFunctionPT ffpt,
     demultiplexCrossoverType(cft);
     /* Demultiplexing mutation function enumeration. */
     demultiplexMutationType(mft);
-    std::cout << "A genetic algorithm object was generated!\n";
 }
 
 template <class IT, class OT>
