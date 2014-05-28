@@ -1,12 +1,16 @@
 CC=g++
 CXXFLAGS=-g
 ARCHBITS=$(shell getconf LONG_BIT)
-OBJS=main.o socket.o stoc1.o randomaelf$(ARCHBITS).a
+MAIN_OBJS=main.o socket.o stoc1.o randomaelf$(ARCHBITS).a
 
-main: $(OBJS)
-	$(CC) -o $@ $(OBJS)
+all: main server
+
+main: $(MAIN_OBJS)
+	$(CC) -o $@ $(MAIN_OBJS)
 
 main: ga.h ga-utils.h socket.hpp
 
+server: server.o
+
 clean:
-	rm *.o main
+	rm *.o main server
