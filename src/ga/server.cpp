@@ -14,23 +14,26 @@
 using namespace std;
 
 
-class Member
+void exit_with_error(const char *errmsg)
 {
+        perror(errmsg);
+        exit(EXIT_FAILURE);
+}
+
+class Remote {
     public:
         string ip;
-        unsigned port;
-        NodeColor color;
-        unsigned id;
+        short unsigned port;
 
-        Member();
-        Member(const struct sockaddr_in&);
+        Remote();
+        Remote(const struct sockaddr_in&);
 };
 
-Member::Member() : ip("0.0.0.0"), port(0), color(MPL_BLACK), id(0)
+Remote::Remote() : ip("0.0.0.0"), port(0)
 {
 }
 
-Member::Member(const struct sockaddr_in& address)
+Remote::Remote(const struct sockaddr_in& address)
 {
         char ipbuf[INET_ADDRSTRLEN];
 
@@ -41,6 +44,23 @@ Member::Member(const struct sockaddr_in& address)
                   ipbuf, INET_ADDRSTRLEN);
 
         ip = string(ipbuf);
+}
+
+class Member : public Remote {
+    public:
+        unsigned id;
+        enum NodeColor color;
+
+        Member();
+        Member(const struct sockaddr_in&);
+};
+
+Member::Member() : Remote(), color(MPL_BLACK), id(0)
+{
+}
+
+Member::Member(const struct sockaddr_in& address) : Remote(address)
+{
 }
 
 class Manager
@@ -73,45 +93,21 @@ void Manager::add_member(const Member& member)
         next_id++;
 }
 
-void exit_with_error(const char *errmsg)
-{
-        perror(errmsg);
-        exit(EXIT_FAILURE);
-}
-
-int manage_request(Manager& manager, int fd,
-                   const struct sockaddr_in& address)
-{
-#define BUFSIZE 128
-        char buffer[BUFSIZE];
-        int n;
-        Member member(address);
-
-        cout << "Request received: " <<
-                member.ip << ":"
-                << member.port << "\n";
-
-        n = read(fd, buffer, sizeof(buffer));
-        if (n < 0) {
-                exit_with_error("read()");
-        }
-
-        manager.add_member(member);
-
-        n = write(fd, buffer, n);
-        if (n < 0) {
-                exit_with_error("write()");
-        }
-
-        return 0;
-}
-
-int main()
-{
+class Server {
+        short unsigned port;
         int listen_fd;
-        short int port = 9863;
         struct sockaddr_in server_address;
-        Manager manager;
+
+    public:
+        Server(short unsigned p);
+        int run();
+        virtual int process_request(int client_fd,
+                                    struct sockaddr_in client_address) = 0;
+        virtual ~Server() { }
+};
+
+Server::Server(short unsigned p) : port(p)
+{
         int optval;
         int ret;
 
@@ -142,11 +138,15 @@ int main()
         if (ret < 0) {
                 exit_with_error("listen()");
         }
+}
 
+int Server::run()
+{
         for (;;) {
                 int connection_fd;
                 struct sockaddr_in client_address;
                 size_t address_len = sizeof(client_address);
+                int ret;
 
                 connection_fd = accept(listen_fd,
                                        (struct sockaddr *)&client_address,
@@ -155,13 +155,58 @@ int main()
                         exit_with_error("accept()");
                 }
 
-                manage_request(manager, connection_fd, client_address);
+                process_request(connection_fd, client_address);
 
                 ret = close(connection_fd);
                 if (ret < 0) {
                         exit_with_error("close()");
                 }
         }
+
+        return 0;
+}
+
+class ManagerServer : public Server {
+        Manager manager;
+
+    public:
+        ManagerServer(short unsigned port) : Server(port) { }
+        virtual int process_request(int client_fd,
+                                    struct sockaddr_in client_address);
+};
+
+int ManagerServer::process_request(int client_fd,
+                                   struct sockaddr_in client_address)
+{
+#define BUFSIZE 128
+        char buffer[BUFSIZE];
+        int n;
+        Member member(client_address);
+
+        cout << "Request received: " <<
+                member.ip << ":"
+                << member.port << "\n";
+
+        n = read(client_fd, buffer, sizeof(buffer));
+        if (n < 0) {
+                exit_with_error("read()");
+        }
+
+        manager.add_member(member);
+
+        n = write(client_fd, buffer, n);
+        if (n < 0) {
+                exit_with_error("write()");
+        }
+
+        return 0;
+}
+
+int main()
+{
+        ManagerServer server(9863);
+
+        server.run();
 
         return 0;
 }
