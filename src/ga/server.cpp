@@ -55,6 +55,8 @@ class RemoteConnection {
         bool open;
 
         RemoteConnection(int _fd, const Remote& r);
+        int send_message(const char *buf, unsigned size) const;
+        int recv_message(char *buf, unsigned size) const;
         int close();
 };
 
@@ -75,6 +77,28 @@ int RemoteConnection::close()
         }
 
         return ret;
+}
+
+int RemoteConnection::send_message(const char *buf, unsigned size) const
+{
+        int n = write(fd, buf, size);
+
+        if (n < 0) {
+                exit_with_error("write()");
+        }
+
+        return n;
+}
+
+int RemoteConnection::recv_message(char *buf, unsigned size) const
+{
+        int n = read(fd, buf, size);
+
+        if (n < 0) {
+                exit_with_error("read()");
+        }
+
+        return n;
 }
 
 class Server {
@@ -218,17 +242,11 @@ int ManagerServer::process_request(const RemoteConnection& connection)
                 connection.remote.ip << ":"
                 << connection.remote.port << "\n";
 
-        n = read(connection.fd, buffer, sizeof(buffer));
-        if (n < 0) {
-                exit_with_error("read()");
-        }
+        n = connection.recv_message(buffer, sizeof(buffer));
 
         manager.add_member(connection.remote);
 
-        n = write(connection.fd, buffer, n);
-        if (n < 0) {
-                exit_with_error("write()");
-        }
+        n = connection.send_message(buffer, n);
 
         return 0;
 }
