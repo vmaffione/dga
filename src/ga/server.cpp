@@ -48,6 +48,35 @@ Remote::Remote(const struct sockaddr_in& a) : address(a)
         ip = string(ipbuf);
 }
 
+class RemoteConnection {
+    public:
+        const Remote& remote;
+        int fd;
+        bool open;
+
+        RemoteConnection(int _fd, const Remote& r);
+        int close();
+};
+
+RemoteConnection::RemoteConnection(int _fd, const Remote& r) : remote(r)
+{
+        fd = _fd;
+        open = true;
+}
+
+int RemoteConnection::close()
+{
+        int ret = ::close(fd);
+
+        open = false;
+
+        if (ret < 0) {
+                exit_with_error("close()");
+        }
+
+        return ret;
+}
+
 class Server {
         short unsigned port;
         int listen_fd;
@@ -56,7 +85,7 @@ class Server {
     public:
         Server(short unsigned p);
         int run();
-        virtual int process_request(int client_fd, const Remote& remote) = 0;
+        virtual int process_request(const RemoteConnection& remote) = 0;
         virtual ~Server() { }
 };
 
@@ -109,12 +138,11 @@ int Server::run()
                         exit_with_error("accept()");
                 }
 
-                process_request(connection_fd, Remote(client_address));
+                Remote remote(client_address);
+                RemoteConnection connection(connection_fd, remote);
 
-                ret = close(connection_fd);
-                if (ret < 0) {
-                        exit_with_error("close()");
-                }
+                process_request(connection);
+                connection.close();
         }
 
         return 0;
@@ -177,27 +205,27 @@ class ManagerServer : public Server {
 
     public:
         ManagerServer(short unsigned port) : Server(port) { }
-        virtual int process_request(int client_fd, const Remote& remote);
+        virtual int process_request(const RemoteConnection& connection);
 };
 
-int ManagerServer::process_request(int client_fd, const Remote& remote)
+int ManagerServer::process_request(const RemoteConnection& connection)
 {
 #define BUFSIZE 128
         char buffer[BUFSIZE];
         int n;
 
         cout << "Request received: " <<
-                remote.ip << ":"
-                << remote.port << "\n";
+                connection.remote.ip << ":"
+                << connection.remote.port << "\n";
 
-        n = read(client_fd, buffer, sizeof(buffer));
+        n = read(connection.fd, buffer, sizeof(buffer));
         if (n < 0) {
                 exit_with_error("read()");
         }
 
-        manager.add_member(remote);
+        manager.add_member(connection.remote);
 
-        n = write(client_fd, buffer, n);
+        n = write(connection.fd, buffer, n);
         if (n < 0) {
                 exit_with_error("write()");
         }
