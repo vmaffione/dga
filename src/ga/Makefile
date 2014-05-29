@@ -8,9 +8,11 @@ all: main server
 main: $(MAIN_OBJS)
 	$(CC) -o $@ $(MAIN_OBJS)
 
-main: ga.h ga-utils.h socket.hpp
+main: ga.h ga-utils.h socket.hpp common.hpp
 
 server: server.o
+
+server.o: common.hpp
 
 clean:
 	rm *.o main server
