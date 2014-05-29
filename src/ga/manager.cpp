@@ -1,5 +1,6 @@
 #include "common.hpp"
 #include "remote.hpp"
+#include "member.hpp"
 
 #include <iostream>
 #include <sys/socket.h>
@@ -14,23 +15,6 @@
 
 using namespace std;
 
-
-class Member : public Remote {
-    public:
-        unsigned id;
-        enum NodeColor color;
-
-        Member();
-        Member(const Remote& r);
-};
-
-Member::Member() : Remote(), color(MPL_BLACK), id(0)
-{
-}
-
-Member::Member(const Remote& r) : Remote(r), color(MPL_BLACK), id(0)
-{
-}
 
 class Manager
 {
@@ -53,7 +37,14 @@ void Manager::add_member(const Remote& remote)
 
         member.color = next_color;
         member.id = next_id;
+/*
+        for (list<Member>::iterator it = members.begin();
+                                it != members.end(); it++) {
+                RemoteConnection connection(*it);
 
+                connection.close();
+        }
+*/
         members.push_back(member);
 
         if (next_color == MPL_BLACK) {
@@ -83,18 +74,23 @@ int ManagerServer::process_request(const RemoteConnection& connection)
                 connection.remote.ip << ":"
                 << connection.remote.port << "\n";
 
-        n = connection.recv_message(buffer, sizeof(buffer));
+        n = connection.recv_message(buffer, sizeof(buffer) - 1);
+        if (n < 0) {
+                exit_with_error("connection.recv_message()");
+        }
+        buffer[n] = '\0';
+        cout << "'" << buffer << "'\n";
 
         manager.add_member(connection.remote);
 
-        n = connection.send_message(buffer, n);
+        //n = connection.send_message(buffer, n);
 
         return 0;
 }
 
 int main()
 {
-        ManagerServer server(9863);
+        ManagerServer server(MANAGER_PORT);
 
         server.run();
 

@@ -1,3 +1,6 @@
+#ifndef __REMOTE_HPP__
+#define __REMOTE_HPP__
+
 #include <iostream>
 #include <sys/socket.h>
 #include <sys/types.h>
@@ -19,6 +22,7 @@ class Remote {
 
         Remote();
         Remote(const struct sockaddr_in&);
+        Remote(std::string _ip, short unsigned _port);
 };
 
 class RemoteConnection {
@@ -45,3 +49,5 @@ class Server {
         virtual int process_request(const RemoteConnection& remote) = 0;
         virtual ~Server() { }
 };
+
+#endif  /*__REMOTE_HPP__ */

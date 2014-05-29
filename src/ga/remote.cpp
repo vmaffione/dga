@@ -77,8 +77,14 @@ int RemoteConnection::close()
 
 int RemoteConnection::send_message(const char *buf, unsigned size) const
 {
-        int n = write(fd, buf, size);
+        int n;
 
+        if (!open) {
+                cerr << __func__ << ": cannot send to a closed connection\n";
+                return 0;
+        }
+
+        n = write(fd, buf, size);
         if (n < 0) {
                 exit_with_error("write()");
         }
@@ -88,8 +94,15 @@ int RemoteConnection::send_message(const char *buf, unsigned size) const
 
 int RemoteConnection::recv_message(char *buf, unsigned size) const
 {
-        int n = read(fd, buf, size);
+        int n;
 
+        if (!open) {
+                cerr << __func__ <<
+                        ": cannot receive from a closed connection\n";
+                return 0;
+        }
+
+        n = read(fd, buf, size);
         if (n < 0) {
                 exit_with_error("read()");
         }
@@ -156,3 +169,10 @@ int Server::run()
         return 0;
 }
 
+Remote::Remote(std::string _ip, short unsigned _port) : ip(_ip), port(_port)
+{
+        memset(&address, 0, sizeof(address));
+        address.sin_family = AF_INET;
+        inet_pton(AF_INET, ip.c_str(), &address.sin_addr);
+        address.sin_port = htons(port);
+}
