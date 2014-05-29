@@ -22,6 +22,7 @@ void exit_with_error(const char *errmsg)
 
 class Remote {
     public:
+        struct sockaddr_in address;
         string ip;
         short unsigned port;
 
@@ -31,9 +32,10 @@ class Remote {
 
 Remote::Remote() : ip("0.0.0.0"), port(0)
 {
+        memset(&address, 0, sizeof(address));
 }
 
-Remote::Remote(const struct sockaddr_in& address)
+Remote::Remote(const struct sockaddr_in& a) : address(a)
 {
         char ipbuf[INET_ADDRSTRLEN];
 
@@ -46,53 +48,6 @@ Remote::Remote(const struct sockaddr_in& address)
         ip = string(ipbuf);
 }
 
-class Member : public Remote {
-    public:
-        unsigned id;
-        enum NodeColor color;
-
-        Member();
-        Member(const struct sockaddr_in&);
-};
-
-Member::Member() : Remote(), color(MPL_BLACK), id(0)
-{
-}
-
-Member::Member(const struct sockaddr_in& address) : Remote(address)
-{
-}
-
-class Manager
-{
-        list<Member> members;
-        NodeColor next_color;
-        unsigned next_id;
-
-    public:
-        Manager();
-        void add_member(const Member& member);
-};
-
-Manager::Manager() : next_color(MPL_BLACK), next_id(1)
-{
-}
-
-void Manager::add_member(const Member& member)
-{
-        members.push_back(member);
-        members.back().color = next_color;
-        members.back().id = next_id;
-
-        if (next_color == MPL_BLACK) {
-                next_color = MPL_RED;
-        } else {
-                next_color = MPL_BLACK;
-        }
-
-        next_id++;
-}
-
 class Server {
         short unsigned port;
         int listen_fd;
@@ -101,8 +56,7 @@ class Server {
     public:
         Server(short unsigned p);
         int run();
-        virtual int process_request(int client_fd,
-                                    struct sockaddr_in client_address) = 0;
+        virtual int process_request(int client_fd, const Remote& remote) = 0;
         virtual ~Server() { }
 };
 
@@ -155,7 +109,7 @@ int Server::run()
                         exit_with_error("accept()");
                 }
 
-                process_request(connection_fd, client_address);
+                process_request(connection_fd, Remote(client_address));
 
                 ret = close(connection_fd);
                 if (ret < 0) {
@@ -166,33 +120,82 @@ int Server::run()
         return 0;
 }
 
+/* =================================================================== */
+
+class Member : public Remote {
+    public:
+        unsigned id;
+        enum NodeColor color;
+
+        Member();
+        Member(const Remote& r);
+};
+
+Member::Member() : Remote(), color(MPL_BLACK), id(0)
+{
+}
+
+Member::Member(const Remote& r) : Remote(r), color(MPL_BLACK), id(0)
+{
+}
+
+class Manager
+{
+        list<Member> members;
+        NodeColor next_color;
+        unsigned next_id;
+
+    public:
+        Manager();
+        void add_member(const Remote& remote);
+};
+
+Manager::Manager() : next_color(MPL_BLACK), next_id(1)
+{
+}
+
+void Manager::add_member(const Remote& remote)
+{
+        Member member(remote);
+
+        member.color = next_color;
+        member.id = next_id;
+
+        members.push_back(member);
+
+        if (next_color == MPL_BLACK) {
+                next_color = MPL_RED;
+        } else {
+                next_color = MPL_BLACK;
+        }
+
+        next_id++;
+}
+
 class ManagerServer : public Server {
         Manager manager;
 
     public:
         ManagerServer(short unsigned port) : Server(port) { }
-        virtual int process_request(int client_fd,
-                                    struct sockaddr_in client_address);
+        virtual int process_request(int client_fd, const Remote& remote);
 };
 
-int ManagerServer::process_request(int client_fd,
-                                   struct sockaddr_in client_address)
+int ManagerServer::process_request(int client_fd, const Remote& remote)
 {
 #define BUFSIZE 128
         char buffer[BUFSIZE];
         int n;
-        Member member(client_address);
 
         cout << "Request received: " <<
-                member.ip << ":"
-                << member.port << "\n";
+                remote.ip << ":"
+                << remote.port << "\n";
 
         n = read(client_fd, buffer, sizeof(buffer));
         if (n < 0) {
                 exit_with_error("read()");
         }
 
-        manager.add_member(member);
+        manager.add_member(remote);
 
         n = write(client_fd, buffer, n);
         if (n < 0) {
