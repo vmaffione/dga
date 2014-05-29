@@ -10,9 +10,10 @@ main: $(MAIN_OBJS)
 
 main: ga.h ga-utils.h socket.hpp common.hpp
 
-server: server.o
+server: server.o remote.o
 
-server.o: common.hpp
+server.o: common.hpp remote.hpp
+remote.o: remote.hpp
 
 clean:
 	rm *.o main server
