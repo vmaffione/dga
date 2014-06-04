@@ -83,13 +83,17 @@ int ManagerServer::process_request(RemoteConnection& connection)
 #define BUFSIZE 128
         char buffer[BUFSIZE];
         int n;
-        JoinMessage join_message;
+        uint8_t opcode;
 
         cout << "Request received from : " << connection.remote.ip <<
                 ":" << connection.remote.port << "\n";
-        join_message.deserialize(connection);
+        connection.deserialize(opcode);
+        if (opcode == JOIN) {
+                JoinRequest join_message;
+                join_message.deserialize(connection);
 
-        manager.add_member(Remote(join_message.ip, join_message.port));
+                manager.add_member(Remote(join_message.ip, join_message.port));
+        }
 
         //n = connection.send_message(buffer, n);
 

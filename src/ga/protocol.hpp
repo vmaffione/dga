@@ -17,13 +17,17 @@ class Member : public Remote {
         Member(const Remote& r) : Remote(r), color(MPL_BLACK), id(0) { }
 };
 
-class JoinMessage : public Message {
+enum Opcode {
+        JOIN = 1,
+};
+
+class JoinRequest : public Message {
     public:
         std::string ip;
         uint32_t port;
 
-        JoinMessage() : port(0) { }
-        JoinMessage(const std::string& _ip, uint32_t _port);
+        JoinRequest() : port(0) { }
+        JoinRequest(const std::string& _ip, uint32_t _port);
         void serialize(RemoteConnection& remote) const;
         void deserialize(RemoteConnection& remote);
 };

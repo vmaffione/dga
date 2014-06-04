@@ -16,18 +16,19 @@
 using namespace std;
 
 
-JoinMessage::JoinMessage(const string& _ip, uint32_t _port) :
+JoinRequest::JoinRequest(const string& _ip, uint32_t _port) :
                                         ip(_ip), port(_port)
 {
 }
 
-void JoinMessage::serialize(RemoteConnection& remote) const
+void JoinRequest::serialize(RemoteConnection& remote) const
 {
+        remote.serialize(static_cast<uint8_t>(JOIN));
         remote.serialize(ip);
         remote.serialize(port);
 }
 
-void JoinMessage::deserialize(RemoteConnection& remote)
+void JoinRequest::deserialize(RemoteConnection& remote)
 {
         remote.deserialize(ip);
         remote.deserialize(port);

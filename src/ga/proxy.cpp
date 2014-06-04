@@ -44,7 +44,7 @@ int join(unsigned int port)
 {
         Remote remote("127.0.0.1", MANAGER_PORT);
         RemoteConnection connection(remote);
-        JoinMessage message("127.0.0.1", port);
+        JoinRequest message("127.0.0.1", port);
 
         message.serialize(connection);
 
