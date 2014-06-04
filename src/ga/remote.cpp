@@ -10,6 +10,8 @@
 #include <unistd.h>
 #include <string>
 #include <list>
+#include <stdint.h>
+#include <endian.h>
 
 using namespace std;
 
@@ -75,7 +77,7 @@ int RemoteConnection::close()
         return ret;
 }
 
-int RemoteConnection::send_message(const char *buf, unsigned size) const
+int RemoteConnection::send_message(const void *buf, unsigned size) const
 {
         int n;
 
@@ -92,7 +94,7 @@ int RemoteConnection::send_message(const char *buf, unsigned size) const
         return n;
 }
 
-int RemoteConnection::recv_message(char *buf, unsigned size) const
+int RemoteConnection::recv_message(void *buf, unsigned size) const
 {
         int n;
 
@@ -110,7 +112,7 @@ int RemoteConnection::recv_message(char *buf, unsigned size) const
         return n;
 }
 
-Server::Server(short unsigned p) : port(p)
+Server::Server(uint16_t p) : port(p)
 {
         int optval;
         int ret;
@@ -169,10 +171,76 @@ int Server::run()
         return 0;
 }
 
-Remote::Remote(std::string _ip, short unsigned _port) : ip(_ip), port(_port)
+Remote::Remote(std::string _ip, uint16_t _port) : ip(_ip), port(_port)
 {
         memset(&address, 0, sizeof(address));
         address.sin_family = AF_INET;
         inet_pton(AF_INET, ip.c_str(), &address.sin_addr);
         address.sin_port = htons(port);
+}
+
+void RemoteConnection::deserialize(uint8_t& byte)
+{
+        int n;
+
+        n = this->recv_message(&byte, 1);
+        if (n <= 0) {
+                byte = 0;
+                return;
+        }
+}
+
+void RemoteConnection::serialize(uint8_t byte)
+{
+        this->send_message(&byte, 1);
+}
+
+void RemoteConnection::deserialize(uint32_t& dw)
+{
+        int n;
+
+        n = this->recv_message(&dw, 4);
+        if (n <= 0) {
+                dw = 0;
+                return;
+        }
+
+        dw = le32toh(dw);
+}
+
+void RemoteConnection::serialize(uint32_t dw)
+{
+        uint32_t ledw = htole32(dw);
+
+        this->send_message(&ledw, 4);
+}
+
+void RemoteConnection::deserialize(string &str)
+{
+        char buffer[MaxSize];
+        int n;
+        uint8_t lenbyte;
+
+        deserialize(lenbyte);
+        if (lenbyte <= 0) {
+                return;
+        }
+
+        n = this->recv_message(buffer, lenbyte);
+        if (n <= 0) {
+                return;
+        }
+
+        str.assign(buffer, n);
+}
+
+void RemoteConnection::serialize(const string& str)
+{
+        unsigned int len = str.size();
+
+        if (len > MaxSize) {
+                len = MaxSize;
+        }
+        serialize(static_cast<uint8_t>(len));
+        this->send_message(str.c_str(), len);
 }

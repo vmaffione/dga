@@ -1,6 +1,5 @@
-#include "common.hpp"
 #include "remote.hpp"
-#include "member.hpp"
+#include "protocol.hpp"
 
 #include <iostream>
 #include <sys/socket.h>
@@ -25,10 +24,19 @@ class Manager
     public:
         Manager();
         void add_member(const Remote& remote);
+        void send_members(RemoteConnection& connection);
 };
 
 Manager::Manager() : next_color(MPL_BLACK), next_id(1)
 {
+}
+
+void Manager::send_members(RemoteConnection& connection)
+{
+        for (list<Member>::iterator it = members.begin();
+                                it != members.end(); it++) {
+                // TODO send the member
+        }
 }
 
 void Manager::add_member(const Remote& remote)
@@ -47,6 +55,12 @@ void Manager::add_member(const Remote& remote)
 */
         members.push_back(member);
 
+        cout << "Members list" << endl;
+        for (list<Member>::iterator it = members.begin();
+                                it != members.end(); it++) {
+                cout << "    " << it->ip << ":" << it->port << endl;
+        }
+
         if (next_color == MPL_BLACK) {
                 next_color = MPL_RED;
         } else {
@@ -61,27 +75,21 @@ class ManagerServer : public Server {
 
     public:
         ManagerServer(short unsigned port) : Server(port) { }
-        virtual int process_request(const RemoteConnection& connection);
+        virtual int process_request(RemoteConnection& connection);
 };
 
-int ManagerServer::process_request(const RemoteConnection& connection)
+int ManagerServer::process_request(RemoteConnection& connection)
 {
 #define BUFSIZE 128
         char buffer[BUFSIZE];
         int n;
+        JoinMessage join_message;
 
-        cout << "Request received: " <<
-                connection.remote.ip << ":"
-                << connection.remote.port << "\n";
+        cout << "Request received from : " << connection.remote.ip <<
+                ":" << connection.remote.port << "\n";
+        join_message.deserialize(connection);
 
-        n = connection.recv_message(buffer, sizeof(buffer) - 1);
-        if (n < 0) {
-                exit_with_error("connection.recv_message()");
-        }
-        buffer[n] = '\0';
-        cout << "'" << buffer << "'\n";
-
-        manager.add_member(connection.remote);
+        manager.add_member(Remote(join_message.ip, join_message.port));
 
         //n = connection.send_message(buffer, n);
 

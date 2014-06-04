@@ -1,6 +1,5 @@
-#include "common.hpp"
 #include "remote.hpp"
-#include "member.hpp"
+#include "protocol.hpp"
 
 #include <iostream>
 #include <sys/socket.h>
@@ -12,6 +11,9 @@
 #include <unistd.h>
 #include <string>
 #include <list>
+#include <stdint.h>
+#include <sstream>
+#include <cerrno>
 
 using namespace std;
 
@@ -19,10 +21,10 @@ using namespace std;
 class MemberServer : public Server {
     public:
         MemberServer(short unsigned port) : Server(port) { }
-        virtual int process_request(const RemoteConnection& connection);
+        virtual int process_request(RemoteConnection& connection);
 };
 
-int MemberServer::process_request(const RemoteConnection& connection)
+int MemberServer::process_request(RemoteConnection& connection)
 {
 #define BUFSIZE 128
         char buffer[BUFSIZE];
@@ -38,25 +40,20 @@ int MemberServer::process_request(const RemoteConnection& connection)
         return 0;
 }
 
-int join()
+int join(unsigned int port)
 {
         Remote remote("127.0.0.1", MANAGER_PORT);
         RemoteConnection connection(remote);
-        const char *msg = "HELO";
-        unsigned len = strlen(msg) + 1;
-        int n;
+        JoinMessage message("127.0.0.1", port);
 
-        n = connection.send_message(msg, len);
-        if (n != len) {
-                exit_with_error("connection.send_message()");
-        }
+        message.serialize(connection);
 
         //n = connection.recv_messages();
 
         connection.close();
 }
 
-int server(unsigned port)
+int server(unsigned int port)
 {
         MemberServer server(port);
 
@@ -67,14 +64,18 @@ int server(unsigned port)
 
 int main(int argc, char **argv)
 {
-        unsigned port;
+        unsigned int port;
 
         if (argc < 2) {
                 exit_with_error("USAGE: program PORT");
         }
         port = atoi(argv[1]);
+        if (port >= 65535) {
+                errno = EINVAL;
+                exit_with_error("PORT > 65535");
+        }
 
-        join();
+        join(port);
         server(port);
 
         return 0;

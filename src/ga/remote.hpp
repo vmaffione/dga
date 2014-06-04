@@ -11,6 +11,8 @@
 #include <unistd.h>
 #include <string>
 #include <list>
+#include <stdint.h>
+
 
 void exit_with_error(const char *errmsg);
 
@@ -18,11 +20,11 @@ class Remote {
     public:
         struct sockaddr_in address;
         std::string ip;
-        short unsigned port;
+        uint16_t port;
 
         Remote();
         Remote(const struct sockaddr_in&);
-        Remote(std::string _ip, short unsigned _port);
+        Remote(std::string _ip, uint16_t _port);
 };
 
 class RemoteConnection {
@@ -33,20 +35,34 @@ class RemoteConnection {
 
         RemoteConnection(const Remote& r);
         RemoteConnection(int _fd, const Remote& r);
-        int send_message(const char *buf, unsigned size) const;
-        int recv_message(char *buf, unsigned size) const;
+        int send_message(const void *buf, unsigned size) const;
+        int recv_message(void *buf, unsigned size) const;
         int close();
+
+        static const int MaxSize = 255;
+        void serialize(const std::string& str);
+        void deserialize(std::string& str);
+        void serialize(uint8_t byte);
+        void deserialize(uint8_t& byte);
+        void serialize(uint32_t dw);
+        void deserialize(uint32_t& dw);
+};
+
+class Message {
+    public:
+        virtual void serialize(RemoteConnection& remote) const = 0;
+        virtual void deserialize(RemoteConnection& remote) = 0;
 };
 
 class Server {
-        short unsigned port;
+        uint16_t port;
         int listen_fd;
         struct sockaddr_in server_address;
 
     public:
-        Server(short unsigned p);
+        Server(uint16_t p);
         int run();
-        virtual int process_request(const RemoteConnection& remote) = 0;
+        virtual int process_request(RemoteConnection& remote) = 0;
         virtual ~Server() { }
 };
 

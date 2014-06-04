@@ -4,6 +4,8 @@
 #include "remote.hpp"
 
 
+enum NodeColor { MPL_RED = 0, MPL_BLACK = 1 };
+
 #define MANAGER_PORT    9863
 
 class Member : public Remote {
@@ -13,6 +15,17 @@ class Member : public Remote {
 
         Member() : Remote(), color(MPL_BLACK), id(0) { }
         Member(const Remote& r) : Remote(r), color(MPL_BLACK), id(0) { }
+};
+
+class JoinMessage : public Message {
+    public:
+        std::string ip;
+        uint32_t port;
+
+        JoinMessage() : port(0) { }
+        JoinMessage(const std::string& _ip, uint32_t _port);
+        void serialize(RemoteConnection& remote) const;
+        void deserialize(RemoteConnection& remote);
 };
 
 #endif  /* __MEMBER_HPP__ */

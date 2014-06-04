@@ -11,12 +11,12 @@ main: $(MAIN_OBJS)
 
 main: ga.h ga-utils.h socket.hpp common.hpp
 
-manager: manager.o remote.o
+manager: manager.o remote.o protocol.o
 
-proxy: proxy.o remote.o
+proxy: proxy.o remote.o protocol.o
 
-manager.o: common.hpp remote.hpp member.hpp
-proxy.o: common.hpp remote.hpp member.hpp
+manager.o: remote.hpp protocol.hpp
+proxy.o: remote.hpp protocol.hpp
 remote.o: remote.hpp
 
 clean:
