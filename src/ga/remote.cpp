@@ -151,7 +151,7 @@ int Server::run()
         for (;;) {
                 int connection_fd;
                 struct sockaddr_in client_address;
-                size_t address_len = sizeof(client_address);
+                socklen_t address_len = sizeof(client_address);
                 int ret;
 
                 connection_fd = accept(listen_fd,
