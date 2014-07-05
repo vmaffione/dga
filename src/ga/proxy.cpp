@@ -27,17 +27,17 @@ class MemberServer : public Server {
 int MemberServer::process_request(RemoteConnection& connection)
 {
 #define BUFSIZE 128
-        char buffer[BUFSIZE];
-        int n;
+    char buffer[BUFSIZE];
+    int n;
 
-        cout << "Request received: " <<
-                connection.remote.ip << ":"
-                << connection.remote.port << "\n";
+    cout << "Request received: " <<
+        connection.remote.ip << ":"
+        << connection.remote.port << "\n";
 
-        n = connection.recv_message(buffer, sizeof(buffer));
-        n = connection.send_message(buffer, n);
+    n = connection.recv_message(buffer, sizeof(buffer));
+    n = connection.send_message(buffer, n);
 
-        return 0;
+    return 0;
 }
 
 int join(unsigned int port)
@@ -57,28 +57,28 @@ int join(unsigned int port)
 
 int server(unsigned int port)
 {
-        MemberServer server(port);
+    MemberServer server(port);
 
-        server.run();
+    server.run();
 
-        return 0;
+    return 0;
 }
 
 int main(int argc, char **argv)
 {
-        unsigned int port;
+    unsigned int port;
 
-        if (argc < 2) {
-                exit_with_error("USAGE: program PORT");
-        }
-        port = atoi(argv[1]);
-        if (port >= 65535) {
-                errno = EINVAL;
-                exit_with_error("PORT > 65535");
-        }
+    if (argc < 2) {
+        exit_with_error("USAGE: program PORT");
+    }
+    port = atoi(argv[1]);
+    if (port >= 65535) {
+        errno = EINVAL;
+        exit_with_error("PORT > 65535");
+    }
 
-        join(port);
-        server(port);
+    join(port);
+    server(port);
 
-        return 0;
+    return 0;
 }
