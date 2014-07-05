@@ -19,6 +19,7 @@ class Member : public Remote {
 
 enum Opcode {
     JOIN = 1,
+    LEAVE,
 };
 
 class JoinRequest : public Message {
@@ -28,6 +29,17 @@ class JoinRequest : public Message {
 
         JoinRequest() : port(0) { }
         JoinRequest(const std::string& _ip, uint32_t _port);
+        void serialize(RemoteConnection& remote) const;
+        void deserialize(RemoteConnection& remote);
+};
+
+class LeaveRequest : public Message {
+    public:
+        std::string ip;
+        uint32_t port;
+
+        LeaveRequest() : port(0) { }
+        LeaveRequest(const std::string& _ip, uint32_t _port);
         void serialize(RemoteConnection& remote) const;
         void deserialize(RemoteConnection& remote);
 };

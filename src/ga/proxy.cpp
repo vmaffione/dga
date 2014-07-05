@@ -14,6 +14,7 @@
 #include <stdint.h>
 #include <sstream>
 #include <cerrno>
+#include <signal.h>
 
 using namespace std;
 
@@ -40,7 +41,12 @@ int MemberServer::process_request(RemoteConnection& connection)
     return 0;
 }
 
-int join(unsigned int port)
+/* Set to "true" by join() if the operation is successful. */
+static bool joined = false;
+static unsigned int server_port = ~0;
+
+static int
+join(unsigned int port)
 {
     Remote remote("127.0.0.1", MANAGER_PORT);
     RemoteConnection connection(remote);
@@ -50,12 +56,40 @@ int join(unsigned int port)
     message.serialize(connection);
 
     response.deserialize(connection);
-    cout << "Response: " << response.content << "\n";
 
     connection.close();
+
+    if (response.content != "OK") {
+        cout << "Join error: " << response.content << endl;
+        exit(EXIT_FAILURE);
+    }
+
+    joined = true;
+    server_port = port;
 }
 
-int server(unsigned int port)
+static int
+leave(unsigned int port)
+{
+    Remote remote("127.0.0.1", MANAGER_PORT);
+    RemoteConnection connection(remote);
+    LeaveRequest request("127.0.0.1", port);
+    Response response;
+
+    request.serialize(connection);
+    response.deserialize(connection);
+    connection.close();
+
+    if (response.content != "OK") {
+        cout << "Leave error: " << response.content << endl;
+        exit(EXIT_FAILURE);
+    }
+
+    joined = false;
+}
+
+static int
+server(unsigned int port)
 {
     MemberServer server(port);
 
@@ -64,9 +98,21 @@ int server(unsigned int port)
     return 0;
 }
 
-int main(int argc, char **argv)
+static void
+sigint_handler(int signum)
+{
+    if (joined) {
+        leave(server_port);
+    }
+
+    exit(EXIT_SUCCESS);
+}
+
+int
+main(int argc, char **argv)
 {
     unsigned int port;
+    struct sigaction sa;
 
     if (argc < 2) {
         exit_with_error("USAGE: program PORT");
@@ -75,6 +121,13 @@ int main(int argc, char **argv)
     if (port >= 65535) {
         errno = EINVAL;
         exit_with_error("PORT > 65535");
+    }
+
+    sa.sa_handler = sigint_handler;
+    sigemptyset(&sa.sa_mask);
+    sa.sa_flags = SA_RESTART;
+    if (sigaction(SIGINT, &sa, NULL) == -1) {
+        cout << "   Warning: SIGINT handler registration failed" << endl;
     }
 
     join(port);

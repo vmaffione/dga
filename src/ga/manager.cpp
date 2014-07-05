@@ -24,6 +24,8 @@ class Manager
     public:
         Manager();
         int add_member(const Remote& remote);
+        int del_member(const Remote& remote);
+        void print_members();
         void send_members(RemoteConnection& connection);
 };
 
@@ -39,7 +41,18 @@ void Manager::send_members(RemoteConnection& connection)
     }
 }
 
-int Manager::add_member(const Remote& remote)
+void
+Manager::print_members()
+{
+    cout << "Members list" << endl;
+    for (list<Member>::iterator it = members.begin();
+            it != members.end(); it++) {
+        cout << "    " << it->ip << ":" << it->port << endl;
+    }
+}
+
+int
+Manager::add_member(const Remote& remote)
 {
     Member member(remote);
 
@@ -62,11 +75,7 @@ int Manager::add_member(const Remote& remote)
        */
     members.push_back(member);
 
-    cout << "Members list" << endl;
-    for (list<Member>::iterator it = members.begin();
-            it != members.end(); it++) {
-        cout << "    " << it->ip << ":" << it->port << endl;
-    }
+    print_members();
 
     if (next_color == MPL_BLACK) {
         next_color = MPL_RED;
@@ -77,6 +86,24 @@ int Manager::add_member(const Remote& remote)
     next_id++;
 
     return 0;
+}
+
+int
+Manager::del_member(const Remote& remote)
+{
+    Member member(remote);
+
+    for (list<Member>::iterator it = members.begin();
+                            it != members.end(); it++) {
+        if (member == *it) {
+            members.erase(it);
+            print_members();
+
+            return 0;
+        }
+    }
+
+    return -1;
 }
 
 class ManagerServer : public Server {
@@ -90,29 +117,40 @@ class ManagerServer : public Server {
 int ManagerServer::process_request(RemoteConnection& connection)
 {
 #define BUFSIZE 128
-    char buffer[BUFSIZE];
-    int n;
     uint8_t opcode;
 
     cout << "Request received from : " << connection.remote.ip <<
         ":" << connection.remote.port << "\n";
     connection.deserialize(opcode);
     if (opcode == JOIN) {
-        int ret;
         string content = "OK";
-
         JoinRequest request;
+        int ret;
 
         request.deserialize(connection);
+        cout << "JOIN-REQUEST(" << request.ip << "," << request.port
+                << ")" << endl;
 
         ret = manager.add_member(Remote(request.ip, request.port));
         if (ret) {
             content = "Already joined";
         }
         Response(content).serialize(connection);
-    }
 
-    //n = connection.send_message(buffer, n);
+    } else if (opcode == LEAVE) {
+        string content = "OK";
+        LeaveRequest request;
+        int ret;
+
+        request.deserialize(connection);
+        cout << "LEAVE-REQUEST(" << request.ip << "," << request.port
+                << ")" << endl;
+        ret = manager.del_member(Remote(request.ip, request.port));
+        if (ret) {
+            content = "No previous join";
+        }
+        Response(content).serialize(connection);
+    }
 
     return 0;
 }

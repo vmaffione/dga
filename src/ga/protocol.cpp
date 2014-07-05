@@ -15,7 +15,7 @@
 
 using namespace std;
 
-
+/* JoinRequest */
 JoinRequest::JoinRequest(const string& _ip, uint32_t _port) :
     ip(_ip), port(_port)
 {
@@ -34,6 +34,26 @@ void JoinRequest::deserialize(RemoteConnection& remote)
     remote.deserialize(port);
 }
 
+/* LeaveRequest */
+LeaveRequest::LeaveRequest(const string& _ip, uint32_t _port) :
+    ip(_ip), port(_port)
+{
+}
+
+void LeaveRequest::serialize(RemoteConnection& remote) const
+{
+    remote.serialize(static_cast<uint8_t>(LEAVE));
+    remote.serialize(ip);
+    remote.serialize(port);
+}
+
+void LeaveRequest::deserialize(RemoteConnection& remote)
+{
+    remote.deserialize(ip);
+    remote.deserialize(port);
+}
+
+/* Response */
 Response::Response(const string& _content) : content(_content)
 {
 }
