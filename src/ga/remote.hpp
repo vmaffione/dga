@@ -25,6 +25,7 @@ class Remote {
         Remote();
         Remote(const struct sockaddr_in&);
         Remote(std::string _ip, uint16_t _port);
+        bool operator==(const Remote&) const;
 };
 
 class RemoteConnection {

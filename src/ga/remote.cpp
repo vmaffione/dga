@@ -40,6 +40,11 @@ Remote::Remote(const struct sockaddr_in& a) : address(a)
     ip = string(ipbuf);
 }
 
+bool Remote::operator==(const Remote& r) const
+{
+    return r.ip == ip && r.port == port;
+}
+
 RemoteConnection::RemoteConnection(int _fd, const Remote& r) : remote(r)
 {
     fd = _fd;

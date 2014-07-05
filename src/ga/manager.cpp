@@ -23,7 +23,7 @@ class Manager
 
     public:
         Manager();
-        void add_member(const Remote& remote);
+        int add_member(const Remote& remote);
         void send_members(RemoteConnection& connection);
 };
 
@@ -39,12 +39,19 @@ void Manager::send_members(RemoteConnection& connection)
     }
 }
 
-void Manager::add_member(const Remote& remote)
+int Manager::add_member(const Remote& remote)
 {
     Member member(remote);
 
     member.color = next_color;
     member.id = next_id;
+
+    for (list<Member>::iterator it = members.begin();
+                            it != members.end(); it++) {
+        if (member == *it) {
+            return -1;
+        }
+    }
     /*
        for (list<Member>::iterator it = members.begin();
        it != members.end(); it++) {
@@ -68,6 +75,8 @@ void Manager::add_member(const Remote& remote)
     }
 
     next_id++;
+
+    return 0;
 }
 
 class ManagerServer : public Server {
@@ -89,14 +98,18 @@ int ManagerServer::process_request(RemoteConnection& connection)
         ":" << connection.remote.port << "\n";
     connection.deserialize(opcode);
     if (opcode == JOIN) {
+        int ret;
+        string content = "OK";
+
         JoinRequest request;
-        Response response("OK");
 
         request.deserialize(connection);
 
-        manager.add_member(Remote(request.ip, request.port));
-
-        response.serialize(connection);
+        ret = manager.add_member(Remote(request.ip, request.port));
+        if (ret) {
+            content = "Already joined";
+        }
+        Response(content).serialize(connection);
     }
 
     //n = connection.send_message(buffer, n);
