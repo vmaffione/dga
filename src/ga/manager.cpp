@@ -89,10 +89,14 @@ int ManagerServer::process_request(RemoteConnection& connection)
                 ":" << connection.remote.port << "\n";
         connection.deserialize(opcode);
         if (opcode == JOIN) {
-                JoinRequest join_message;
-                join_message.deserialize(connection);
+            JoinRequest request;
+            Response response("OK");
 
-                manager.add_member(Remote(join_message.ip, join_message.port));
+            request.deserialize(connection);
+
+            manager.add_member(Remote(request.ip, request.port));
+
+            response.serialize(connection);
         }
 
         //n = connection.send_message(buffer, n);

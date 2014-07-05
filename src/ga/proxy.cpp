@@ -42,15 +42,17 @@ int MemberServer::process_request(RemoteConnection& connection)
 
 int join(unsigned int port)
 {
-        Remote remote("127.0.0.1", MANAGER_PORT);
-        RemoteConnection connection(remote);
-        JoinRequest message("127.0.0.1", port);
+    Remote remote("127.0.0.1", MANAGER_PORT);
+    RemoteConnection connection(remote);
+    JoinRequest message("127.0.0.1", port);
+    Response response;
 
-        message.serialize(connection);
+    message.serialize(connection);
 
-        //n = connection.recv_messages();
+    response.deserialize(connection);
+    cout << "Response: " << response.content << "\n";
 
-        connection.close();
+    connection.close();
 }
 
 int server(unsigned int port)

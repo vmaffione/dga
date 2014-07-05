@@ -34,3 +34,16 @@ void JoinRequest::deserialize(RemoteConnection& remote)
         remote.deserialize(port);
 }
 
+Response::Response(const string& _content) : content(_content)
+{
+}
+
+void Response::serialize(RemoteConnection& remote) const
+{
+    remote.serialize(content);
+}
+
+void Response::deserialize(RemoteConnection& remote)
+{
+    remote.deserialize(content);
+}
