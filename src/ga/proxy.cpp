@@ -66,6 +66,8 @@ join(unsigned int port)
 
     joined = true;
     server_port = port;
+
+    return 0;
 }
 
 static int
@@ -86,6 +88,8 @@ leave(unsigned int port)
     }
 
     joined = false;
+
+    return 0;
 }
 
 struct ServerArgs {

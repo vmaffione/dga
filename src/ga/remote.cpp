@@ -163,7 +163,6 @@ int Server::run()
         int connection_fd;
         struct sockaddr_in client_address;
         socklen_t address_len = sizeof(client_address);
-        int ret;
 
         connection_fd = accept(listen_fd,
                 (struct sockaddr *)&client_address,

@@ -1,5 +1,5 @@
 CC=g++
-CXXFLAGS=-g
+CXXFLAGS=-g -Wall
 ARCHBITS=$(shell getconf LONG_BIT)
 MAIN_OBJS=main.o socket.o stoc1.o randomaelf$(ARCHBITS).a
 EXES=main manager proxy

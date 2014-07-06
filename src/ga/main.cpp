@@ -33,9 +33,9 @@ int main(int argc, char **argv)
 
     try
     {
-        int popsize = 30;
-        int numIter = 750;
-        int elichi = (((int)(popsize*0.04)) > 1) ? ((int)(popsize*0.04)) : 1;  // number of elite children
+        unsigned int popsize = 30;
+        unsigned int numIter = 750;
+        unsigned int elichi = (((unsigned int)(popsize*0.04)) > 1) ? ((unsigned int)(popsize*0.04)) : 1;  // number of elite children
 
         /*
            cout << "\n\n FLOATVECTOR EXAMPLE: \n";

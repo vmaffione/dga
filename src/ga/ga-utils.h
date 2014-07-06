@@ -6,18 +6,22 @@ typedef vector<double> DoubleVector;
 
 ostream& operator<<(ostream& os, const FloatVector& r)
 {
-    std::cout << "(";
-    for (int d=0 ;d<r.size()-1; d++)
-        std::cout << r[d] << ", ";
-    std::cout << r[r.size()-1] << ")";
+    os << "(";
+    for (unsigned int d=0 ; d<r.size()-1; d++)
+        os << r[d] << ", ";
+    os << r[r.size()-1] << ")";
+
+    return os;
 }
 
 ostream& operator<<(ostream& os, const DoubleVector& r)
 {
-    std::cout << "(";
-    for (int d=0 ;d<r.size()-1; d++)
-        std::cout << r[d] << ", ";
-    std::cout << r[r.size()-1] << ")";
+    os << "(";
+    for (unsigned int d=0; d<r.size()-1; d++)
+        os << r[d] << ", ";
+    os << r[r.size()-1] << ")";
+
+    return os;
 }
 
 
@@ -47,6 +51,8 @@ class GAUtils
         enum CrossoverFunctionType { CrossoverConvex = 0, CrossoverScattered };
         enum MutationFunctionType { MutationGaussian = 0, MUT_OTHER };
 
+        unsigned int D;  // DA RENDERE PRIVATO!!! ORA E' PUBBLICO PERCHè LO UTILIZZANO LE STAMPE DI DEBUG IN GA
+
     private:
         double* mgScaleV;     // scale vector for mutationGaussian
         float shrink;        // shrink factor for mutationGaussian
@@ -57,9 +63,7 @@ class GAUtils
         StochasticLib1 NURG;  // non-uniform random generator
 
     public:
-        GAUtils(): mgScaleV(NULL), shrink(1.0), D(0), NURG(NURG_SEED) { }   // DA FARE: NURG dovrebbe essere inizializzato in modo diverso su core diversi...
-
-        int D;  // DA RENDERE PRIVATO!!! ORA E' PUBBLICO PERCHè LO UTILIZZANO LE STAMPE DI DEBUG IN GA
+        GAUtils(): D(0), mgScaleV(NULL), shrink(1.0), NURG(NURG_SEED) { }   // DA FARE: NURG dovrebbe essere inizializzato in modo diverso su core diversi...
 
         template <class T> void mutationGaussian(const T& t, T& res);
         template <class T> void crossoverConvex(const T& t1, const T& t2, T& res);
@@ -70,10 +74,10 @@ class GAUtils
         template <class T> void serializeAndCopy(MeshByte* buffer, T** pointersBuffer, int num);
         template <class T> void deserializeAndCopy(MeshByte* buffer, T** pointersBuffer, int num);
 
-        void generate(int N, vector<float>& v, float lb, float ub);
-        void generate(int popSize, vector<double>& v, double lb, double ub);
-        void generate(int N, vector<FloatVector>& v, const vector<float>& lbs, const vector<float>& ubs);
-        void generate(int N, vector<DoubleVector>& v, const vector<double>& lbs, const vector<double>& ubs);
+        void generate(unsigned int N, vector<float>& v, float lb, float ub);
+        void generate(unsigned int popSize, vector<double>& v, double lb, double ub);
+        void generate(unsigned int N, vector<FloatVector>& v, const vector<float>& lbs, const vector<float>& ubs);
+        void generate(unsigned int N, vector<DoubleVector>& v, const vector<double>& lbs, const vector<double>& ubs);
 
         void setMeshInterfacePointer(SccMeshInterface* mip) { meshInterfacePointer = mip; }
         SccMeshInterface* meshInterfacePointer;
@@ -86,7 +90,7 @@ class GAUtils
            {
            public:
            void generate(int N, vector<float>& v, float lb, float ub);
-           void generate(int popSize, vector<double>& v, double lb, double ub);
+           void generate(unsigned int popSize, vector<double>& v, double lb, double ub);
            void generate(int N, vector<FloatVector>& v, int dim, const vector<float>& lbs, const vector<float>& ubs);
            void generate(int N, vector<DoubleVector>& v, int dim, const vector<double>& lbs, const vector<double>& ubs);
            };
@@ -208,7 +212,8 @@ void GAUtils::crossoverConvex<double>(const double& t1, const double& t2, double
 void GAUtils::crossoverConvex<FloatVector>(const FloatVector& t1, const FloatVector& t2, FloatVector& res)
 {
     float beta = rand_float();
-    for (int i=0; i<t1.size(); i++)
+
+    for (unsigned int i=0; i<t1.size(); i++)
         res[i] = t1[i] * beta + (1 - beta) * t2[i];
 }
 
@@ -216,7 +221,8 @@ void GAUtils::crossoverConvex<FloatVector>(const FloatVector& t1, const FloatVec
 void GAUtils::crossoverConvex<DoubleVector>(const DoubleVector& t1, const DoubleVector& t2, DoubleVector& res)
 {
     float beta = rand_float();
-    for (int i=0; i<t1.size(); i++)
+
+    for (unsigned int i=0; i<t1.size(); i++)
         res[i] = t1[i] * beta + (1 - beta) * t2[i];
 }
 
@@ -243,14 +249,14 @@ void GAUtils::crossoverScattered<double>(const double& t1, const double& t2, dou
     template <>
 void GAUtils::crossoverScattered<FloatVector>(const FloatVector& t1, const FloatVector& t2, FloatVector& res)
 {
-    for (int i=0; i<t1.size(); i++)
+    for (unsigned int i=0; i<t1.size(); i++)
         res[i] = (rand_float() < 0.5) ? t1[i] : t2[i];
 }
 
     template <>
 void GAUtils::crossoverScattered<DoubleVector>(const DoubleVector& t1, const DoubleVector& t2, DoubleVector& res)
 {
-    for (int i=0; i<t1.size(); i++)
+    for (unsigned int i=0; i<t1.size(); i++)
         res[i] = (rand_float() < 0.5) ? t1[i] : t2[i];
 }
 
@@ -277,20 +283,20 @@ void GAUtils::mutationGaussian<double>(const double& t, double& res)
     template <>
 void GAUtils::mutationGaussian<FloatVector>(const FloatVector& t, FloatVector& res)
 {
-    for (int i=0; i<t.size(); i++)
+    for (unsigned int i=0; i<t.size(); i++)
         res[i] = t[i] + NURG.Normal(0.0, mgScaleV[i]);
 }
 
     template <>
 void GAUtils::mutationGaussian<DoubleVector>(const DoubleVector& t, DoubleVector& res)
 {
-    for (int i=0; i<t.size(); i++)
+    for (unsigned int i=0; i<t.size(); i++)
         res[i] = t[i] + NURG.Normal(0.0, mgScaleV[i]);
 }
 
 void GAUtils::refreshMutationGaussianParameters(int numGen, int maxGen)
 {
-    for (int i=0; i<D; i++)
+    for (unsigned int i=0; i<D; i++)
         mgScaleV[i] *= 1 - (shrink * numGen) / maxGen;
 }
 
@@ -301,7 +307,7 @@ void GAUtils::refreshMutationGaussianParameters(int numGen, int maxGen)
 /******************************************************************************/
 
 // FLOAT
-void GAUtils::generate(int popSize, vector<float>& v, float lb, float ub)
+void GAUtils::generate(unsigned int popSize, vector<float>& v, float lb, float ub)
 {
     if (popSize < 1)
         throw GAError("Bad population size");
@@ -318,7 +324,7 @@ void GAUtils::generate(int popSize, vector<float>& v, float lb, float ub)
     D = 1;
 
     rand_init(GEN_BASE_SEED + GEN_MUL_SEED * (meshInterfacePointer->getMyID()));
-    for (int i=0; i<popSize; i++)
+    for (unsigned int i=0; i<popSize; i++)
         v[i] = lb + (ub - lb) * rand_float();
 
     /*
@@ -329,7 +335,7 @@ void GAUtils::generate(int popSize, vector<float>& v, float lb, float ub)
 }
 
 // DOUBLE
-void GAUtils::generate(int popSize, vector<double>& v, double lb, double ub)
+void GAUtils::generate(unsigned int popSize, vector<double>& v, double lb, double ub)
 {
     if (popSize < 1)
         throw GAError("Bad population size");
@@ -346,7 +352,7 @@ void GAUtils::generate(int popSize, vector<double>& v, double lb, double ub)
     D = 1;
 
     rand_init(GEN_BASE_SEED + GEN_MUL_SEED * (meshInterfacePointer->getMyID()));
-    for (int i=0; i<popSize; i++)
+    for (unsigned int i=0; i<popSize; i++)
         v[i] = lb + (ub - lb) * rand_float();
 
     /*
@@ -357,16 +363,16 @@ void GAUtils::generate(int popSize, vector<double>& v, double lb, double ub)
 }
 
 // FLOATVECTOR
-void GAUtils::generate(int popSize, vector<FloatVector>& v, const vector<float>& lbs, const vector<float>& ubs)
+void GAUtils::generate(unsigned int popSize, vector<FloatVector>& v, const vector<float>& lbs, const vector<float>& ubs)
 {
     if (popSize < 1)
         throw GAError("Bad population size");
-    int dim = lbs.size();
+    unsigned int dim = lbs.size();
     if (dim < 1)
         throw GAError("Bad FloatVector size");
     if (ubs.size() != dim)
         throw GAError("Upper bounds vector and lower bounds vector are not of the same size");
-    for (int i=0; i<dim; i++)
+    for (unsigned int i=0; i<dim; i++)
         if (lbs[i] > ubs[i])
             throw GAError("An upper bound must be greater or equal than corresponding lower bound");
 
@@ -375,7 +381,7 @@ void GAUtils::generate(int popSize, vector<FloatVector>& v, const vector<float>&
         v.resize(popSize);
     if (v[0].size() != dim)
     {
-        for (int i=0; i<popSize; i++)
+        for (unsigned int i=0; i<popSize; i++)
             v[i].resize(dim);
     }
 
@@ -387,15 +393,15 @@ void GAUtils::generate(int popSize, vector<FloatVector>& v, const vector<float>&
         mgScaleV = new double[dim];
     }
     // generates scaling vector for mutationGaussian
-    for (int i=0; i<dim; i++)
+    for (unsigned int i=0; i<dim; i++)
         mgScaleV[i] = ubs[i] - lbs[i];
 
     D = dim;
 
     // generation of the initial population
     rand_init(GEN_BASE_SEED + GEN_MUL_SEED * (meshInterfacePointer->getMyID()));
-    for (int i=0; i<popSize; i++)
-        for (int d=0; d<dim; d++)
+    for (unsigned int i=0; i<popSize; i++)
+        for (unsigned int d=0; d<dim; d++)
             v[i][d] = lbs[d] + (ubs[d] - lbs[d]) * rand_float();
 
 
@@ -410,16 +416,17 @@ void GAUtils::generate(int popSize, vector<FloatVector>& v, const vector<float>&
 }
 
 // DOUBLEVECTOR
-void GAUtils::generate(int popSize, vector<DoubleVector>& v, const vector<double>& lbs, const vector<double>& ubs)
+void GAUtils::generate(unsigned int popSize, vector<DoubleVector>& v, const vector<double>& lbs, const vector<double>& ubs)
 {
+    unsigned int dim = lbs.size();
+
     if (popSize < 1)
         throw GAError("Bad population size");
-    int dim = lbs.size();
     if (dim < 1)
         throw GAError("Bad FloatVector size");
     if (ubs.size() != dim)
         throw GAError("Upper bounds vector and lower bounds vector are not of the same size");
-    for (int i=0; i<dim; i++)
+    for (unsigned int i=0; i<dim; i++)
         if (lbs[i] > ubs[i])
             throw GAError("An upper bound must be greater or equal than corresponding lower bound");
 
@@ -428,7 +435,7 @@ void GAUtils::generate(int popSize, vector<DoubleVector>& v, const vector<double
         v.resize(popSize);
     if (v[0].size() != dim)
     {
-        for (int i=0; i<popSize; i++)
+        for (unsigned int i=0; i<popSize; i++)
             v[i].resize(dim);
     }
 
@@ -439,15 +446,15 @@ void GAUtils::generate(int popSize, vector<DoubleVector>& v, const vector<double
             delete [] mgScaleV;
         mgScaleV = new double[dim];
     }
-    for (int i=0; i<dim; i++)
+    for (unsigned int i=0; i<dim; i++)
         mgScaleV[i] = ubs[i] - lbs[i];
 
     D = dim;
 
     // generation of the initial population
     rand_init(GEN_BASE_SEED + GEN_MUL_SEED * (meshInterfacePointer->getMyID()));
-    for (int i=0; i<popSize; i++)
-        for (int d=0; d<dim; d++)
+    for (unsigned int i=0; i<popSize; i++)
+        for (unsigned int d=0; d<dim; d++)
             v[i][d] = lbs[d] + (ubs[d] - lbs[d]) * rand_float();
 
     /*

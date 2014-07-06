@@ -16,8 +16,8 @@ class Member : public Remote {
         unsigned id;
         enum NodeColor color;
 
-        Member() : Remote(), color(MPL_BLACK), id(0) { }
-        Member(const Remote& r) : Remote(r), color(MPL_BLACK), id(0) { }
+        Member() : Remote(), id(0), color(MPL_BLACK) { }
+        Member(const Remote& r) : Remote(r), id(0), color(MPL_BLACK) { }
 };
 
 enum Opcode {
