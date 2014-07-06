@@ -9,7 +9,7 @@
 #include <cstring>
 #include <unistd.h>
 #include <string>
-#include <list>
+#include <vector>
 #include <stdint.h>
 #include <sstream>
 
@@ -52,6 +52,56 @@ void LeaveRequest::deserialize(RemoteConnection& remote)
     remote.deserialize(ip);
     remote.deserialize(port);
 }
+
+/* UpdateRequest */
+void UpdateRequest::add(const std::string& ip, uint32_t port)
+{
+    ips.push_back(ip);
+    ports.push_back(port);
+    num++;
+}
+
+void UpdateRequest::get(unsigned int idx, std::string& ip, uint32_t& port)
+{
+    if (idx >= size()) {
+        return;
+    }
+
+    ip = ips[idx];
+    port = ports[idx];
+}
+
+void UpdateRequest::serialize(RemoteConnection& remote) const
+{
+    remote.serialize(static_cast<uint8_t>(UPDATE));
+    remote.serialize(num);
+    for (vector<string>::const_iterator it = ips.begin();
+                                        it != ips.end(); it++) {
+        remote.serialize(*it);
+    }
+    for (vector<uint32_t>::const_iterator it = ports.begin();
+                                    it != ports.end(); it++) {
+        remote.serialize(*it);
+    }
+}
+
+void UpdateRequest::deserialize(RemoteConnection& remote)
+{
+    remote.deserialize(num);
+    for (uint32_t i = 0; i < num; i++) {
+        string ip;
+
+        remote.deserialize(ip);
+        ips.push_back(ip);
+    }
+    for (uint32_t i = 0; i < num; i++) {
+        uint32_t port;
+
+        remote.deserialize(port);
+        ports.push_back(port);
+    }
+}
+
 
 /* Response */
 Response::Response(const string& _content) : content(_content)

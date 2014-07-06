@@ -88,14 +88,19 @@ leave(unsigned int port)
     joined = false;
 }
 
-static int
-server(unsigned int port)
+struct ServerArgs {
+    unsigned int port;
+};
+
+static void *
+server(void *arg)
 {
-    MemberServer server(port);
+    ServerArgs *sargs = static_cast<ServerArgs*>(arg);
+    MemberServer server(sargs->port);
 
     server.run();
 
-    return 0;
+    return NULL;
 }
 
 static void
@@ -113,6 +118,8 @@ main(int argc, char **argv)
 {
     unsigned int port;
     struct sigaction sa;
+    pthread_t server_tid;
+    ServerArgs sargs;
 
     if (argc < 2) {
         exit_with_error("USAGE: program PORT");
@@ -129,9 +136,24 @@ main(int argc, char **argv)
     if (sigaction(SIGINT, &sa, NULL) == -1) {
         cout << "   Warning: SIGINT handler registration failed" << endl;
     }
+    if (sigaction(SIGTERM, &sa, NULL) == -1) {
+        cout << "   Warning: SIGTERM handler registration failed" << endl;
+    }
 
+    /* Start the member server. */
+    sargs.port = port;
+    if (pthread_create(&server_tid, NULL, server, (void *)&sargs)) {
+        exit_with_error("pthread_create()");
+    }
+
+    /* Carry out the join procedure with the manager server. */
     join(port);
-    server(port);
+
+    /* Wait for the member server to complete - it still holds the memory
+     * for 'sargs', which is ours. */
+    if (pthread_join(server_tid, NULL)) {
+        exit_with_error("pthread_join()");
+    }
 
     return 0;
 }

@@ -14,6 +14,7 @@ main: ga.h ga-utils.h socket.hpp common.hpp
 manager: manager.o remote.o protocol.o
 
 proxy: proxy.o remote.o protocol.o
+	$(CC) -o $@ $@.o remote.o protocol.o -lpthread
 
 manager.o: remote.hpp protocol.hpp
 proxy.o: remote.hpp protocol.hpp

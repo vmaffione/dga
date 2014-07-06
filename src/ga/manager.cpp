@@ -17,28 +17,22 @@ using namespace std;
 
 class Manager
 {
-        list<Member> members;
         NodeColor next_color;
-        unsigned next_id;
+        unsigned int next_id;
+
+    public:
+        list<Member> members;
 
     public:
         Manager();
         int add_member(const Remote& remote);
         int del_member(const Remote& remote);
+        void update_new_member(unsigned int new_id);
         void print_members();
-        void send_members(RemoteConnection& connection);
 };
 
 Manager::Manager() : next_color(MPL_BLACK), next_id(1)
 {
-}
-
-void Manager::send_members(RemoteConnection& connection)
-{
-    for (list<Member>::iterator it = members.begin();
-            it != members.end(); it++) {
-        // TODO send the member
-    }
 }
 
 void
@@ -83,9 +77,7 @@ Manager::add_member(const Remote& remote)
         next_color = MPL_BLACK;
     }
 
-    next_id++;
-
-    return 0;
+    return next_id++;
 }
 
 int
@@ -104,6 +96,27 @@ Manager::del_member(const Remote& remote)
     }
 
     return -1;
+}
+
+void
+Manager::update_new_member(unsigned int new_id)
+{
+    UpdateRequest request;
+    list<Member>::iterator nit;
+
+    for (list<Member>::iterator it = members.begin();
+                            it != members.end(); it++) {
+        if (it->id != new_id) {
+            request.add(it->ip, it->port);
+        } else {
+            nit = it;
+        }
+    }
+
+    RemoteConnection connection(*nit);
+
+    request.serialize(connection);
+    connection.close();
 }
 
 class ManagerServer : public Server {
@@ -127,15 +140,24 @@ int ManagerServer::process_request(RemoteConnection& connection)
         JoinRequest request;
         int ret;
 
+        /* Process the join request. */
         request.deserialize(connection);
         cout << "JOIN-REQUEST(" << request.ip << "," << request.port
                 << ")" << endl;
 
-        ret = manager.add_member(Remote(request.ip, request.port));
-        if (ret) {
+        Remote remote(request.ip, request.port);
+
+        ret = manager.add_member(remote);
+        if (ret < 0) {
             content = "Already joined";
         }
         Response(content).serialize(connection);
+
+        /* Close the current connection, since update_new_member() will
+         * open another one towards the same member. */
+        connection.close();
+
+        manager.update_new_member(ret);
 
     } else if (opcode == LEAVE) {
         string content = "OK";

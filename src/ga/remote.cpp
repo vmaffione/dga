@@ -71,7 +71,13 @@ RemoteConnection::RemoteConnection(const Remote& r) : remote(r)
 
 int RemoteConnection::close()
 {
-    int ret = ::close(fd);
+    int ret;
+
+    if (!open) {
+        return 0;
+    }
+
+    ret = ::close(fd);
 
     open = false;
 

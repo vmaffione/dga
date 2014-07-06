@@ -3,6 +3,9 @@
 
 #include "remote.hpp"
 
+#include <vector>
+#include <stdint.h>
+#include <string>
 
 enum NodeColor { MPL_RED = 0, MPL_BLACK = 1 };
 
@@ -20,6 +23,7 @@ class Member : public Remote {
 enum Opcode {
     JOIN = 1,
     LEAVE,
+    UPDATE,
 };
 
 class JoinRequest : public Message {
@@ -40,6 +44,20 @@ class LeaveRequest : public Message {
 
         LeaveRequest() : port(0) { }
         LeaveRequest(const std::string& _ip, uint32_t _port);
+        void serialize(RemoteConnection& remote) const;
+        void deserialize(RemoteConnection& remote);
+};
+
+class UpdateRequest : public Message {
+        std::vector<std::string> ips;
+        std::vector<uint32_t> ports;
+        uint32_t num;
+
+    public:
+        UpdateRequest() : num(0) { }
+        void add(const std::string& ip, uint32_t port);
+        void get(unsigned int idx, std::string& ip, uint32_t& port);
+        unsigned int size() const { return num; }
         void serialize(RemoteConnection& remote) const;
         void deserialize(RemoteConnection& remote);
 };
