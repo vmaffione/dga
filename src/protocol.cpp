@@ -15,6 +15,7 @@
 
 using namespace std;
 
+
 /* JoinRequest */
 JoinRequest::JoinRequest(const string& _ip, uint32_t _port) :
     ip(_ip), port(_port)
@@ -54,54 +55,36 @@ void LeaveRequest::deserialize(RemoteConnection& remote)
 }
 
 /* UpdateRequest */
-void UpdateRequest::add(const std::string& ip, uint32_t port)
-{
-    ips.push_back(ip);
-    ports.push_back(port);
-    num++;
-}
-
-void UpdateRequest::get(unsigned int idx, std::string& ip, uint32_t& port)
-{
-    if (idx >= size()) {
-        return;
-    }
-
-    ip = ips[idx];
-    port = ports[idx];
-}
-
 void UpdateRequest::serialize(RemoteConnection& remote) const
 {
     remote.serialize(static_cast<uint8_t>(UPDATE));
-    remote.serialize(num);
-    for (vector<string>::const_iterator it = ips.begin();
-                                        it != ips.end(); it++) {
-        remote.serialize(*it);
-    }
-    for (vector<uint32_t>::const_iterator it = ports.begin();
-                                    it != ports.end(); it++) {
-        remote.serialize(*it);
+    remote.serialize(static_cast<uint32_t>(members.size()));
+    for (unsigned int i = 0; i < members.size(); i++) {
+        remote.serialize(members[i].ip);
+        remote.serialize(static_cast<uint32_t>(members[i].port));
+        remote.serialize(static_cast<uint32_t>(members[i].id));
+        remote.serialize(static_cast<uint8_t>(members[i].color));
     }
 }
 
 void UpdateRequest::deserialize(RemoteConnection& remote)
 {
-    remote.deserialize(num);
-    for (uint32_t i = 0; i < num; i++) {
-        string ip;
+    uint32_t sz;
+    string ip;
+    uint32_t id;
+    uint8_t color;
+    uint32_t port;
 
+    remote.deserialize(sz);
+    for (unsigned int i = 0; i < sz; i++) {
         remote.deserialize(ip);
-        ips.push_back(ip);
-    }
-    for (uint32_t i = 0; i < num; i++) {
-        uint32_t port;
-
         remote.deserialize(port);
-        ports.push_back(port);
+        remote.deserialize(id);
+        remote.deserialize(color);
+        members.push_back(Member(Remote(ip, port), id,
+                                static_cast<enum NodeColor>(color)));
     }
 }
-
 
 /* Response */
 Response::Response(const string& _content) : content(_content)

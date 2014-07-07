@@ -27,16 +27,24 @@ class MemberServer : public Server {
 
 int MemberServer::process_request(RemoteConnection& connection)
 {
-#define BUFSIZE 128
-    char buffer[BUFSIZE];
-    int n;
+    uint8_t opcode;
 
     cout << "Request received: " <<
         connection.remote.ip << ":"
-        << connection.remote.port << "\n";
+        << connection.remote.port << endl;
+    connection.deserialize(opcode);
 
-    n = connection.recv_message(buffer, sizeof(buffer));
-    n = connection.send_message(buffer, n);
+    if (opcode == UPDATE) {
+        UpdateRequest request;
+
+        request.deserialize(connection);
+        cout << "UPDATE-REQUEST(" << request.members.size() << ")" << endl;
+        for (unsigned int i = 0; i < request.members.size(); i++) {
+            const Member& m = request.members[i];
+            cout << "   Member " << m.ip << " " << m.port << " "
+                    << m.id << " " << m.color << endl;
+        }
+    }
 
     return 0;
 }

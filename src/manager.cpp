@@ -41,7 +41,8 @@ Manager::print_members()
     cout << "Members list" << endl;
     for (list<Member>::iterator it = members.begin();
             it != members.end(); it++) {
-        cout << "    " << it->ip << ":" << it->port << endl;
+        cout << "    " << it->ip << ":" << it->port <<
+                ", <" << it->id << ", " << it->color << ">" << endl;
     }
 }
 
@@ -59,14 +60,6 @@ Manager::add_member(const Remote& remote)
             return -1;
         }
     }
-    /*
-       for (list<Member>::iterator it = members.begin();
-       it != members.end(); it++) {
-       RemoteConnection connection(*it);
-
-       connection.close();
-       }
-       */
     members.push_back(member);
 
     print_members();
@@ -102,15 +95,20 @@ void
 Manager::update_new_member(unsigned int new_id)
 {
     UpdateRequest request;
-    list<Member>::iterator nit;
+    list<Member>::iterator nit = members.end();
 
     for (list<Member>::iterator it = members.begin();
                             it != members.end(); it++) {
         if (it->id != new_id) {
-            request.add(it->ip, it->port);
+            request.members.push_back(*it);
         } else {
             nit = it;
         }
+    }
+
+    if (nit == members.end()) {
+        cerr << __func__ << ": Internal error" << endl;
+        exit(EXIT_FAILURE);
     }
 
     RemoteConnection connection(*nit);
@@ -129,12 +127,12 @@ class ManagerServer : public Server {
 
 int ManagerServer::process_request(RemoteConnection& connection)
 {
-#define BUFSIZE 128
     uint8_t opcode;
 
     cout << "Request received from : " << connection.remote.ip <<
-        ":" << connection.remote.port << "\n";
+        ":" << connection.remote.port << endl;
     connection.deserialize(opcode);
+
     if (opcode == JOIN) {
         string content = "OK";
         JoinRequest request;
@@ -150,12 +148,9 @@ int ManagerServer::process_request(RemoteConnection& connection)
         ret = manager.add_member(remote);
         if (ret < 0) {
             content = "Already joined";
+            return 0;
         }
         Response(content).serialize(connection);
-
-        /* Close the current connection, since update_new_member() will
-         * open another one towards the same member. */
-        connection.close();
 
         manager.update_new_member(ret);
 

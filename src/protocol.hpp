@@ -18,6 +18,8 @@ class Member : public Remote {
 
         Member() : Remote(), id(0), color(MPL_BLACK) { }
         Member(const Remote& r) : Remote(r), id(0), color(MPL_BLACK) { }
+        Member(const Remote& r, unsigned _id, enum NodeColor _c)
+                                    : Remote(r), id(_id), color(_c) { }
 };
 
 enum Opcode {
@@ -49,15 +51,10 @@ class LeaveRequest : public Message {
 };
 
 class UpdateRequest : public Message {
-        std::vector<std::string> ips;
-        std::vector<uint32_t> ports;
-        uint32_t num;
-
     public:
-        UpdateRequest() : num(0) { }
-        void add(const std::string& ip, uint32_t port);
-        void get(unsigned int idx, std::string& ip, uint32_t& port);
-        unsigned int size() const { return num; }
+        std::vector<Member> members;
+
+        UpdateRequest() { }
         void serialize(RemoteConnection& remote) const;
         void deserialize(RemoteConnection& remote);
 };
