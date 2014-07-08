@@ -28,6 +28,7 @@ class Manager
         int add_member(const Remote& remote);
         int del_member(const Remote& remote);
         void update_new_member(unsigned int new_id);
+        void update_old_members(unsigned int new_id);
         void print_members();
 };
 
@@ -117,6 +118,36 @@ Manager::update_new_member(unsigned int new_id)
     connection.close();
 }
 
+void
+Manager::update_old_members(unsigned int new_id)
+{
+    list<Member>::iterator nit = members.end();
+
+    for (list<Member>::iterator it = members.begin();
+                            it != members.end(); it++) {
+        if (it->id == new_id) {
+            nit = it;
+        }
+    }
+
+    if (nit == members.end()) {
+        cerr << __func__ << ": Internal error" << endl;
+        exit(EXIT_FAILURE);
+    }
+
+    for (list<Member>::iterator it = members.begin();
+                            it != members.end(); it++) {
+        if (it != nit) {
+            UpdateRequest request;
+            RemoteConnection connection(*it);
+
+            request.members.push_back(*nit);
+            request.serialize(connection);
+            connection.close();
+        }
+    }
+}
+
 class ManagerServer : public Server {
         Manager manager;
 
@@ -153,6 +184,7 @@ int ManagerServer::process_request(RemoteConnection& connection)
         Response(content).serialize(connection);
 
         manager.update_new_member(ret);
+        manager.update_old_members(ret);
 
     } else if (opcode == LEAVE) {
         string content = "OK";
