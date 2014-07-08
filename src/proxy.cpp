@@ -38,7 +38,8 @@ int MemberServer::process_request(RemoteConnection& connection)
         UpdateRequest request;
 
         request.deserialize(connection);
-        cout << "UPDATE-REQUEST(" << request.members.size() << ")" << endl;
+        cout << "UPDATE-REQUEST-" << request.add << "-(" <<
+                request.members.size() << ")" << endl;
         for (unsigned int i = 0; i < request.members.size(); i++) {
             const Member& m = request.members[i];
             cout << "   Member " << m.ip << " " << m.port << " "

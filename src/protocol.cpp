@@ -58,6 +58,7 @@ void LeaveRequest::deserialize(RemoteConnection& remote)
 void UpdateRequest::serialize(RemoteConnection& remote) const
 {
     remote.serialize(static_cast<uint8_t>(UPDATE));
+    remote.serialize(static_cast<uint8_t>(add ? 1 : 0));
     remote.serialize(static_cast<uint32_t>(members.size()));
     for (unsigned int i = 0; i < members.size(); i++) {
         remote.serialize(members[i].ip);
@@ -69,12 +70,15 @@ void UpdateRequest::serialize(RemoteConnection& remote) const
 
 void UpdateRequest::deserialize(RemoteConnection& remote)
 {
+    uint8_t add_;
     uint32_t sz;
     string ip;
     uint32_t id;
     uint8_t color;
     uint32_t port;
 
+    remote.deserialize(add_);
+    add = add_;
     remote.deserialize(sz);
     for (unsigned int i = 0; i < sz; i++) {
         remote.deserialize(ip);

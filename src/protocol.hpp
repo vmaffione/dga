@@ -53,8 +53,9 @@ class LeaveRequest : public Message {
 class UpdateRequest : public Message {
     public:
         std::vector<Member> members;
+        bool add;
 
-        UpdateRequest() { }
+        UpdateRequest() : add(true) { }
         void serialize(RemoteConnection& remote) const;
         void deserialize(RemoteConnection& remote);
 };
