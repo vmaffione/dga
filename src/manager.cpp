@@ -17,29 +17,26 @@
 using namespace std;
 
 
-class Manager
-{
+class ManagerServer : public Server {
         NodeColor next_color;
         unsigned int next_id;
-
-    public:
         list<Member> members;
 
     public:
-        Manager();
-        int add_member(const Remote& remote);
+        ManagerServer(short unsigned port) : Server(port),
+                            next_color(MPL_BLACK), next_id(1) { }
+
+        virtual int process_request(RemoteConnection& connection);
+
+        int add_member(const Member& remote);
         int del_member(const Remote& remote);
         void update_new_member(unsigned int new_id);
         void update_old_members(unsigned int new_id);
         void print_members();
 };
 
-Manager::Manager() : next_color(MPL_BLACK), next_id(1)
-{
-}
-
 void
-Manager::print_members()
+ManagerServer::print_members()
 {
     cout << "Members list" << endl;
     for (list<Member>::iterator it = members.begin();
@@ -50,12 +47,9 @@ Manager::print_members()
 }
 
 int
-Manager::add_member(const Remote& remote)
+ManagerServer::add_member(const Member& remote)
 {
     Member member(remote);
-
-    member.color = next_color;
-    member.id = next_id;
 
     for (list<Member>::iterator it = members.begin();
                             it != members.end(); it++) {
@@ -64,20 +58,13 @@ Manager::add_member(const Remote& remote)
         }
     }
     members.push_back(member);
-
     print_members();
 
-    if (next_color == MPL_BLACK) {
-        next_color = MPL_RED;
-    } else {
-        next_color = MPL_BLACK;
-    }
-
-    return next_id++;
+    return 0;
 }
 
 int
-Manager::del_member(const Remote& remote)
+ManagerServer::del_member(const Remote& remote)
 {
     Member member(remote);
 
@@ -95,7 +82,7 @@ Manager::del_member(const Remote& remote)
 }
 
 void
-Manager::update_new_member(unsigned int new_id)
+ManagerServer::update_new_member(unsigned int new_id)
 {
     UpdateRequest request;
     list<Member>::iterator nit = members.end();
@@ -121,7 +108,7 @@ Manager::update_new_member(unsigned int new_id)
 }
 
 void
-Manager::update_old_members(unsigned int new_id)
+ManagerServer::update_old_members(unsigned int new_id)
 {
     list<Member>::iterator nit = members.end();
 
@@ -150,14 +137,6 @@ Manager::update_old_members(unsigned int new_id)
     }
 }
 
-class ManagerServer : public Server {
-        Manager manager;
-
-    public:
-        ManagerServer(short unsigned port) : Server(port) { }
-        virtual int process_request(RemoteConnection& connection);
-};
-
 int ManagerServer::process_request(RemoteConnection& connection)
 {
     uint8_t opcode;
@@ -176,17 +155,27 @@ int ManagerServer::process_request(RemoteConnection& connection)
         cout << "JOIN-REQUEST(" << request.ip << "," << request.port
                 << ")" << endl;
 
-        Remote remote(request.ip, request.port);
+        Member member(Remote(request.ip, request.port));
 
-        ret = manager.add_member(remote);
+        member.color = next_color;
+        member.id = next_id;
+
+        ret = add_member(member);
         if (ret < 0) {
             content = "Already joined";
-            return 0;
+        } else {
+            if (next_color == MPL_BLACK) {
+                next_color = MPL_RED;
+            } else {
+                next_color = MPL_BLACK;
+            }
+            next_id++;
         }
+
         Response(content).serialize(connection);
 
-        manager.update_new_member(ret);
-        manager.update_old_members(ret);
+        update_new_member(member.id);
+        update_old_members(member.id);
 
     } else if (opcode == LEAVE) {
         string content = "OK";
@@ -196,7 +185,7 @@ int ManagerServer::process_request(RemoteConnection& connection)
         request.deserialize(connection);
         cout << "LEAVE-REQUEST(" << request.ip << "," << request.port
                 << ")" << endl;
-        ret = manager.del_member(Remote(request.ip, request.port));
+        ret = del_member(Remote(request.ip, request.port));
         if (ret) {
             content = "No previous join";
         }
