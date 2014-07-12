@@ -63,8 +63,6 @@ void UpdateRequest::serialize(RemoteConnection& remote) const
     for (unsigned int i = 0; i < members.size(); i++) {
         remote.serialize(members[i].ip);
         remote.serialize(static_cast<uint32_t>(members[i].port));
-        remote.serialize(static_cast<uint32_t>(members[i].id));
-        remote.serialize(static_cast<uint8_t>(members[i].color));
     }
 }
 
@@ -73,8 +71,6 @@ void UpdateRequest::deserialize(RemoteConnection& remote)
     uint8_t add_;
     uint32_t sz;
     string ip;
-    uint32_t id;
-    uint8_t color;
     uint32_t port;
 
     remote.deserialize(add_);
@@ -83,10 +79,7 @@ void UpdateRequest::deserialize(RemoteConnection& remote)
     for (unsigned int i = 0; i < sz; i++) {
         remote.deserialize(ip);
         remote.deserialize(port);
-        remote.deserialize(id);
-        remote.deserialize(color);
-        members.push_back(Member(Remote(ip, port), id,
-                                static_cast<enum NodeColor>(color)));
+        members.push_back(Member(Remote(ip, port)));
     }
 }
 

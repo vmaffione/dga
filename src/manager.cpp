@@ -18,22 +18,23 @@ using namespace std;
 
 
 class ManagerServer : public Server {
-        NodeColor next_color;
-        unsigned int next_id;
         list<Member> members;
 
     public:
-        ManagerServer(short unsigned port) : Server(port),
-                            next_color(MPL_BLACK), next_id(1) { }
+        ManagerServer(short unsigned port);
 
         virtual int process_request(RemoteConnection& connection);
 
-        int add_member(const Member& remote);
+        list<Member>::iterator add_member(const Member& remote);
         int del_member(const Remote& remote);
-        void update_new_member(unsigned int new_id);
-        void update_old_members(unsigned int new_id);
+        void update_new_member(list<Member>::iterator nit);
+        void update_old_members(list<Member>::iterator nit);
         void print_members();
 };
+
+ManagerServer::ManagerServer(short unsigned port) : Server(port)
+{
+}
 
 void
 ManagerServer::print_members()
@@ -41,26 +42,23 @@ ManagerServer::print_members()
     cout << "Members list" << endl;
     for (list<Member>::iterator it = members.begin();
             it != members.end(); it++) {
-        cout << "    " << it->ip << ":" << it->port <<
-                ", <" << it->id << ", " << it->color << ">" << endl;
+        cout << "    " << it->ip << ":" << it->port << endl;
     }
 }
 
-int
-ManagerServer::add_member(const Member& remote)
+list<Member>::iterator
+ManagerServer::add_member(const Member& member)
 {
-    Member member(remote);
-
     for (list<Member>::iterator it = members.begin();
                             it != members.end(); it++) {
         if (member == *it) {
-            return -1;
+            return it;
         }
     }
     members.push_back(member);
     print_members();
 
-    return 0;
+    return --members.end();
 }
 
 int
@@ -82,17 +80,14 @@ ManagerServer::del_member(const Remote& remote)
 }
 
 void
-ManagerServer::update_new_member(unsigned int new_id)
+ManagerServer::update_new_member(list<Member>::iterator nit)
 {
     UpdateRequest request;
-    list<Member>::iterator nit = members.end();
 
     for (list<Member>::iterator it = members.begin();
                             it != members.end(); it++) {
-        if (it->id != new_id) {
+        if (it != nit) {
             request.members.push_back(*it);
-        } else {
-            nit = it;
         }
     }
 
@@ -108,17 +103,8 @@ ManagerServer::update_new_member(unsigned int new_id)
 }
 
 void
-ManagerServer::update_old_members(unsigned int new_id)
+ManagerServer::update_old_members(list<Member>::iterator nit)
 {
-    list<Member>::iterator nit = members.end();
-
-    for (list<Member>::iterator it = members.begin();
-                            it != members.end(); it++) {
-        if (it->id == new_id) {
-            nit = it;
-        }
-    }
-
     if (nit == members.end()) {
         cerr << __func__ << ": Internal error" << endl;
         exit(EXIT_FAILURE);
@@ -148,7 +134,7 @@ int ManagerServer::process_request(RemoteConnection& connection)
     if (opcode == JOIN) {
         string content = "OK";
         JoinRequest request;
-        int ret;
+        list<Member>::iterator ret;
 
         /* Process the join request. */
         request.deserialize(connection);
@@ -157,25 +143,15 @@ int ManagerServer::process_request(RemoteConnection& connection)
 
         Member member(Remote(request.ip, request.port));
 
-        member.color = next_color;
-        member.id = next_id;
-
         ret = add_member(member);
-        if (ret < 0) {
+        if (ret == members.end()) {
             content = "Already joined";
-        } else {
-            if (next_color == MPL_BLACK) {
-                next_color = MPL_RED;
-            } else {
-                next_color = MPL_BLACK;
-            }
-            next_id++;
         }
 
         Response(content).serialize(connection);
 
-        update_new_member(member.id);
-        update_old_members(member.id);
+        update_new_member(ret);
+        update_old_members(ret);
 
     } else if (opcode == LEAVE) {
         string content = "OK";
@@ -198,8 +174,8 @@ int ManagerServer::process_request(RemoteConnection& connection)
                 request.members.size() << ")" << endl;
         for (unsigned int i = 0; i < request.members.size(); i++) {
             const Member& m = request.members[i];
-            cout << "   Member " << m.ip << " " << m.port << " "
-                    << m.id << " " << m.color << endl;
+            cout << "   Member " << m.ip << " " << m.port << endl;
+            add_member(m);
         }
     }
 
