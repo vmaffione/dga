@@ -34,6 +34,7 @@ class ManagerServer : public Server {
 
 ManagerServer::ManagerServer(short unsigned port) : Server(port)
 {
+    add_member(Member(Remote("127.0.0.1", port)));
 }
 
 void
