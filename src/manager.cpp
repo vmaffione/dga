@@ -27,8 +27,9 @@ class ManagerServer : public Server {
 
         list<Member>::iterator add_member(const Member& remote);
         int del_member(const Remote& remote);
-        void update_new_member(list<Member>::iterator nit);
-        void update_old_members(list<Member>::iterator nit);
+        void sync_new_member(list<Member>::iterator nit);
+        void notify_old_members_add(list<Member>::iterator nit);
+        void notify_old_members_del(const Member& remote);
         void print_members();
 };
 
@@ -81,7 +82,7 @@ ManagerServer::del_member(const Remote& remote)
 }
 
 void
-ManagerServer::update_new_member(list<Member>::iterator nit)
+ManagerServer::sync_new_member(list<Member>::iterator nit)
 {
     UpdateRequest request;
 
@@ -109,7 +110,7 @@ ManagerServer::update_new_member(list<Member>::iterator nit)
 }
 
 void
-ManagerServer::update_old_members(list<Member>::iterator nit)
+ManagerServer::notify_old_members_add(list<Member>::iterator nit)
 {
     if (nit == members.end()) {
         cerr << __func__ << ": Internal error" << endl;
@@ -131,6 +132,25 @@ ManagerServer::update_old_members(list<Member>::iterator nit)
             request.serialize(connection);
             connection.close();
         }
+    }
+}
+
+void ManagerServer::notify_old_members_del(const Member& member)
+{
+    for (list<Member>::iterator it = members.begin();
+                            it != members.end(); it++) {
+        UpdateRequest request;
+        RemoteConnection connection(*it);
+
+        if (!connection.open) {
+            cerr << __func__ << ": connection failed" << endl;
+            continue;
+        }
+
+        request.add = false;
+        request.members.push_back(member);
+        request.serialize(connection);
+        connection.close();
     }
 }
 
@@ -161,8 +181,8 @@ int ManagerServer::process_request(RemoteConnection& connection)
 
         Response(content).serialize(connection);
 
-        update_new_member(ret);
-        update_old_members(ret);
+        sync_new_member(ret);
+        notify_old_members_add(ret);
 
     } else if (opcode == LEAVE) {
         string content = "OK";
@@ -172,11 +192,16 @@ int ManagerServer::process_request(RemoteConnection& connection)
         request.deserialize(connection);
         cout << "LEAVE-REQUEST(" << request.ip << "," << request.port
                 << ")" << endl;
-        ret = del_member(Remote(request.ip, request.port));
+
+        Member member(Remote(request.ip, request.port));
+
+        ret = del_member(member);
         if (ret) {
             content = "No previous join";
         }
         Response(content).serialize(connection);
+
+        notify_old_members_del(member);
     } else if (opcode == UPDATE) {
         UpdateRequest request;
 
@@ -186,7 +211,11 @@ int ManagerServer::process_request(RemoteConnection& connection)
         for (unsigned int i = 0; i < request.members.size(); i++) {
             const Member& m = request.members[i];
             cout << "   Member " << m.ip << " " << m.port << endl;
-            add_member(m);
+            if (request.add) {
+                add_member(m);
+            } else {
+                del_member(m);
+            }
         }
     }
 
