@@ -63,7 +63,7 @@ RemoteConnection::RemoteConnection(const Remote& r) : remote(r)
     ret = connect(fd, (struct sockaddr *)&remote.address,
             sizeof(remote.address));
     if (ret < 0) {
-        exit_with_error("connect()");
+        return;
     }
 
     open = true;

@@ -99,6 +99,11 @@ ManagerServer::update_new_member(list<Member>::iterator nit)
 
     RemoteConnection connection(*nit);
 
+    if (!connection.open) {
+        cerr << __func__ << ": connection failed" << endl;
+        return;
+    }
+
     request.serialize(connection);
     connection.close();
 }
@@ -116,6 +121,11 @@ ManagerServer::update_old_members(list<Member>::iterator nit)
         if (it != nit) {
             UpdateRequest request;
             RemoteConnection connection(*it);
+
+            if (!connection.open) {
+                cerr << __func__ << ": connection failed" << endl;
+                continue;
+            }
 
             request.members.push_back(*nit);
             request.serialize(connection);
@@ -196,6 +206,11 @@ join()
     JoinRequest message("127.0.0.1", server_port);
     Response response;
 
+    if (!connection.open) {
+        cerr << __func__ << ": connection failed" << endl;
+        return -1;
+    }
+
     message.serialize(connection);
 
     response.deserialize(connection);
@@ -219,6 +234,11 @@ leave()
     RemoteConnection connection(remote);
     LeaveRequest request("127.0.0.1", server_port);
     Response response;
+
+    if (!connection.open) {
+        cerr << __func__ << ": connection failed" << endl;
+        return -1;
+    }
 
     request.serialize(connection);
     response.deserialize(connection);
