@@ -18,10 +18,14 @@ using namespace std;
 
 
 class ManagerServer : public Server {
+        bool joined;
+        unsigned int server_port;
+        unsigned int join_port;
+
         list<Member> members;
 
     public:
-        ManagerServer(short unsigned port);
+        ManagerServer(unsigned int s_port, unsigned j_port);
 
         virtual int process_request(RemoteConnection& connection);
 
@@ -30,12 +34,15 @@ class ManagerServer : public Server {
         void sync_new_member(list<Member>::iterator nit);
         void notify_old_members_add(list<Member>::iterator nit);
         void notify_old_members_del(const Member& remote);
+        int join();
+        int leave();
         void print_members();
 };
 
-ManagerServer::ManagerServer(short unsigned port) : Server(port)
+ManagerServer::ManagerServer(unsigned int s_port, unsigned int j_port) :
+                        Server(s_port), server_port(s_port), join_port(j_port)
 {
-    add_member(Member(Remote("127.0.0.1", port)));
+    add_member(Member(Remote("127.0.0.1", server_port)));
 }
 
 void
@@ -135,7 +142,8 @@ ManagerServer::notify_old_members_add(list<Member>::iterator nit)
     }
 }
 
-void ManagerServer::notify_old_members_del(const Member& member)
+void
+ManagerServer::notify_old_members_del(const Member& member)
 {
     for (list<Member>::iterator it = members.begin();
                             it != members.end(); it++) {
@@ -154,7 +162,8 @@ void ManagerServer::notify_old_members_del(const Member& member)
     }
 }
 
-int ManagerServer::process_request(RemoteConnection& connection)
+int
+ManagerServer::process_request(RemoteConnection& connection)
 {
     uint8_t opcode;
 
@@ -202,6 +211,7 @@ int ManagerServer::process_request(RemoteConnection& connection)
         Response(content).serialize(connection);
 
         notify_old_members_del(member);
+
     } else if (opcode == UPDATE) {
         UpdateRequest request;
 
@@ -222,13 +232,10 @@ int ManagerServer::process_request(RemoteConnection& connection)
     return 0;
 }
 
-/* Set to "true" by join() if the operation is successful. */
-static bool joined = false;
-static unsigned int server_port = ~0U;
-static unsigned int join_port = ~0U;
+static ManagerServer *server = NULL;
 
-static int
-join()
+int
+ManagerServer::join()
 {
     Remote remote("127.0.0.1", join_port);
     RemoteConnection connection(remote);
@@ -256,9 +263,13 @@ join()
     return 0;
 }
 
-static int
-leave()
+int
+ManagerServer::leave()
 {
+    if (!joined) {
+        return 0;
+    }
+
     Remote remote("127.0.0.1", join_port);
     RemoteConnection connection(remote);
     LeaveRequest request("127.0.0.1", server_port);
@@ -283,17 +294,10 @@ leave()
     return 0;
 }
 
-struct ServerArgs {
-    unsigned int port;
-};
-
 static void *
-server(void *arg)
+server_function(void *arg)
 {
-    ServerArgs *sargs = static_cast<ServerArgs*>(arg);
-    ManagerServer server(sargs->port);
-
-    server.run();
+    server->run();
 
     return NULL;
 }
@@ -301,9 +305,7 @@ server(void *arg)
 static void
 sigint_handler(int signum)
 {
-    if (joined) {
-        leave();
-    }
+    server->leave();
 
     exit(EXIT_SUCCESS);
 }
@@ -315,7 +317,6 @@ main(int argc, char **argv)
     unsigned int j_port = ~0U;
     struct sigaction sa;
     pthread_t server_tid;
-    ServerArgs sargs;
 
     if (argc < 2) {
         exit_with_error("USAGE: program PORT [JOINPORT]");
@@ -325,7 +326,6 @@ main(int argc, char **argv)
         errno = EINVAL;
         exit_with_error("PORT > 65535");
     }
-    server_port = s_port;
 
     if (argc > 2) {
         j_port = atoi(argv[2]);
@@ -333,8 +333,9 @@ main(int argc, char **argv)
             errno = EINVAL;
             exit_with_error("PORT > 65535");
         }
-        join_port = j_port;
     }
+
+    server = new ManagerServer(s_port, j_port);
 
     sa.sa_handler = sigint_handler;
     sigemptyset(&sa.sa_mask);
@@ -347,21 +348,22 @@ main(int argc, char **argv)
     }
 
     /* Start the server. */
-    sargs.port = s_port;
-    if (pthread_create(&server_tid, NULL, server, (void *)&sargs)) {
+    if (pthread_create(&server_tid, NULL, server_function, NULL)) {
         exit_with_error("pthread_create()");
     }
 
     if (j_port != ~0U) {
         /* Carry out the join procedure with the manager server. */
-        join();
+        server->join();
     }
 
     /* Wait for the member server to complete - it still holds the memory
-     * for 'sargs', which is ours. */
+     * for 'server', which is ours. */
     if (pthread_join(server_tid, NULL)) {
         exit_with_error("pthread_join()");
     }
+
+    delete server;
 
     return 0;
 }
