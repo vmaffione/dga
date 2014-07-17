@@ -12,9 +12,11 @@
 #include <string>
 #include <list>
 #include <vector>
+#include <set>
 #include <signal.h>
 #include <cerrno>
 #include <ctime>
+#include <cassert>
 
 using namespace std;
 
@@ -23,17 +25,17 @@ class PeerServer : public Server {
         unsigned int join_port;
         Member me;
 
-        vector<Member> members;
+        set<Member> members;
 
     public:
         PeerServer(unsigned int s_port, unsigned j_port);
 
         virtual int process_request(RemoteConnection& connection);
 
-        vector<Member>::iterator add_member(const Member& remote);
+        set<Member>::iterator add_member(const Member& remote);
         int del_member(const Remote& remote);
-        void sync_new_member(vector<Member>::iterator nit);
-        void notify_old_members_add(vector<Member>::iterator nit);
+        void sync_new_member(set<Member>::iterator nit);
+        void notify_old_members_add(set<Member>::iterator nit);
         void notify_old_members_del(const Member& remote);
         int join();
         int leave();
@@ -51,51 +53,46 @@ void
 PeerServer::print_members()
 {
     cout << "Members list" << endl;
-    for (vector<Member>::iterator it = members.begin();
+    for (set<Member>::iterator it = members.begin();
             it != members.end(); it++) {
         cout << "    " << it->ip << ":" << it->port << endl;
     }
 }
 
-vector<Member>::iterator
+set<Member>::iterator
 PeerServer::add_member(const Member& member)
 {
-    for (vector<Member>::iterator it = members.begin();
-                            it != members.end(); it++) {
-        if (member == *it) {
-            return it;
-        }
-    }
-    members.push_back(member);
-    print_members();
+    pair< set<Member>::iterator, bool> ret;
 
-    return --members.end();
+    ret = members.insert(member);
+    if (ret.second) {
+        print_members();
+    }
+
+    return ret.first;
 }
 
 int
 PeerServer::del_member(const Remote& remote)
 {
     Member member(remote);
+    size_t erased;
 
-    for (vector<Member>::iterator it = members.begin();
-                            it != members.end(); it++) {
-        if (member == *it) {
-            members.erase(it);
-            print_members();
-
-            return 0;
-        }
+    erased = members.erase(member);
+    if (erased) {
+        print_members();
+        return 0;
     }
 
     return -1;
 }
 
 void
-PeerServer::sync_new_member(vector<Member>::iterator nit)
+PeerServer::sync_new_member(set<Member>::iterator nit)
 {
     UpdateRequest request;
 
-    for (vector<Member>::iterator it = members.begin();
+    for (set<Member>::iterator it = members.begin();
                             it != members.end(); it++) {
         if (it != nit) {
             request.members.push_back(*it);
@@ -119,14 +116,14 @@ PeerServer::sync_new_member(vector<Member>::iterator nit)
 }
 
 void
-PeerServer::notify_old_members_add(vector<Member>::iterator nit)
+PeerServer::notify_old_members_add(set<Member>::iterator nit)
 {
     if (nit == members.end()) {
         cerr << __func__ << ": Internal error" << endl;
         exit(EXIT_FAILURE);
     }
 
-    for (vector<Member>::iterator it = members.begin();
+    for (set<Member>::iterator it = members.begin();
                             it != members.end(); it++) {
         if (it != nit) {
             UpdateRequest request;
@@ -147,7 +144,7 @@ PeerServer::notify_old_members_add(vector<Member>::iterator nit)
 void
 PeerServer::notify_old_members_del(const Member& member)
 {
-    for (vector<Member>::iterator it = members.begin();
+    for (set<Member>::iterator it = members.begin();
                             it != members.end(); it++) {
         UpdateRequest request;
         RemoteConnection connection(*it);
@@ -176,7 +173,7 @@ PeerServer::process_request(RemoteConnection& connection)
     if (opcode == JOIN) {
         string content = "OK";
         JoinRequest request;
-        vector<Member>::iterator ret;
+        set<Member>::iterator ret;
 
         /* Process the join request. */
         request.deserialize(connection);
@@ -266,25 +263,22 @@ PeerServer::join()
 int
 PeerServer::leave()
 {
-    int r;
     unsigned int leave_port = join_port;
 
-    if (members.size() == 1 && members[0] == me) {
+    if (members.size() == 1 && *(members.begin()) == me) {
         /* I'm the only one left, no LEAVE procedure
          * is necessary. */
         return 0;
     }
 
     if (members.size()) {
-        Member other;
+        set<Member>::iterator it = members.begin();
 
-        srand(time(NULL));
-        do {
-            r = rand() % members.size();
-            other = members[r];
-        } while (other == me);
-        leave_port = other.port;
-cout << "R = " << r << endl;
+        while (it != members.end() && *it == me) {
+            it++;
+        }
+        assert(it != members.end());
+        leave_port = it->port;
     }
 
     Remote remote("127.0.0.1", leave_port);

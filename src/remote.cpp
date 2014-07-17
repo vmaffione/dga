@@ -45,6 +45,11 @@ bool Remote::operator==(const Remote& r) const
     return r.ip == ip && r.port == port;
 }
 
+bool Remote::operator<(const Remote& r) const
+{
+    return ip < r.ip || port < r.port;
+}
+
 RemoteConnection::RemoteConnection(int _fd, const Remote& r) : remote(r)
 {
     fd = _fd;
