@@ -13,14 +13,15 @@
 #include <list>
 #include <signal.h>
 #include <cerrno>
+#include <ctime>
 
 using namespace std;
 
 
 class ManagerServer : public Server {
         bool joined;
-        unsigned int server_port;
         unsigned int join_port;
+        Member me;
 
         list<Member> members;
 
@@ -40,9 +41,10 @@ class ManagerServer : public Server {
 };
 
 ManagerServer::ManagerServer(unsigned int s_port, unsigned int j_port) :
-                        Server(s_port), server_port(s_port), join_port(j_port)
+                        Server(s_port), joined(false), join_port(j_port),
+                        me(Remote("127.0.0.1", s_port))
 {
-    add_member(Member(Remote("127.0.0.1", server_port)));
+    add_member(me);
 }
 
 void
@@ -239,7 +241,7 @@ ManagerServer::join()
 {
     Remote remote("127.0.0.1", join_port);
     RemoteConnection connection(remote);
-    JoinRequest message("127.0.0.1", server_port);
+    JoinRequest message("127.0.0.1", me.port);
     Response response;
 
     if (!connection.open) {
@@ -272,7 +274,7 @@ ManagerServer::leave()
 
     Remote remote("127.0.0.1", join_port);
     RemoteConnection connection(remote);
-    LeaveRequest request("127.0.0.1", server_port);
+    LeaveRequest request("127.0.0.1", me.port);
     Response response;
 
     if (!connection.open) {
