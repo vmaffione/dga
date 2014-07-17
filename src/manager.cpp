@@ -11,6 +11,7 @@
 #include <unistd.h>
 #include <string>
 #include <list>
+#include <vector>
 #include <signal.h>
 #include <cerrno>
 #include <ctime>
@@ -19,21 +20,20 @@ using namespace std;
 
 
 class ManagerServer : public Server {
-        bool joined;
         unsigned int join_port;
         Member me;
 
-        list<Member> members;
+        vector<Member> members;
 
     public:
         ManagerServer(unsigned int s_port, unsigned j_port);
 
         virtual int process_request(RemoteConnection& connection);
 
-        list<Member>::iterator add_member(const Member& remote);
+        vector<Member>::iterator add_member(const Member& remote);
         int del_member(const Remote& remote);
-        void sync_new_member(list<Member>::iterator nit);
-        void notify_old_members_add(list<Member>::iterator nit);
+        void sync_new_member(vector<Member>::iterator nit);
+        void notify_old_members_add(vector<Member>::iterator nit);
         void notify_old_members_del(const Member& remote);
         int join();
         int leave();
@@ -41,7 +41,7 @@ class ManagerServer : public Server {
 };
 
 ManagerServer::ManagerServer(unsigned int s_port, unsigned int j_port) :
-                        Server(s_port), joined(false), join_port(j_port),
+                        Server(s_port), join_port(j_port),
                         me(Remote("127.0.0.1", s_port))
 {
     add_member(me);
@@ -51,16 +51,16 @@ void
 ManagerServer::print_members()
 {
     cout << "Members list" << endl;
-    for (list<Member>::iterator it = members.begin();
+    for (vector<Member>::iterator it = members.begin();
             it != members.end(); it++) {
         cout << "    " << it->ip << ":" << it->port << endl;
     }
 }
 
-list<Member>::iterator
+vector<Member>::iterator
 ManagerServer::add_member(const Member& member)
 {
-    for (list<Member>::iterator it = members.begin();
+    for (vector<Member>::iterator it = members.begin();
                             it != members.end(); it++) {
         if (member == *it) {
             return it;
@@ -77,7 +77,7 @@ ManagerServer::del_member(const Remote& remote)
 {
     Member member(remote);
 
-    for (list<Member>::iterator it = members.begin();
+    for (vector<Member>::iterator it = members.begin();
                             it != members.end(); it++) {
         if (member == *it) {
             members.erase(it);
@@ -91,11 +91,11 @@ ManagerServer::del_member(const Remote& remote)
 }
 
 void
-ManagerServer::sync_new_member(list<Member>::iterator nit)
+ManagerServer::sync_new_member(vector<Member>::iterator nit)
 {
     UpdateRequest request;
 
-    for (list<Member>::iterator it = members.begin();
+    for (vector<Member>::iterator it = members.begin();
                             it != members.end(); it++) {
         if (it != nit) {
             request.members.push_back(*it);
@@ -119,14 +119,14 @@ ManagerServer::sync_new_member(list<Member>::iterator nit)
 }
 
 void
-ManagerServer::notify_old_members_add(list<Member>::iterator nit)
+ManagerServer::notify_old_members_add(vector<Member>::iterator nit)
 {
     if (nit == members.end()) {
         cerr << __func__ << ": Internal error" << endl;
         exit(EXIT_FAILURE);
     }
 
-    for (list<Member>::iterator it = members.begin();
+    for (vector<Member>::iterator it = members.begin();
                             it != members.end(); it++) {
         if (it != nit) {
             UpdateRequest request;
@@ -147,7 +147,7 @@ ManagerServer::notify_old_members_add(list<Member>::iterator nit)
 void
 ManagerServer::notify_old_members_del(const Member& member)
 {
-    for (list<Member>::iterator it = members.begin();
+    for (vector<Member>::iterator it = members.begin();
                             it != members.end(); it++) {
         UpdateRequest request;
         RemoteConnection connection(*it);
@@ -176,7 +176,7 @@ ManagerServer::process_request(RemoteConnection& connection)
     if (opcode == JOIN) {
         string content = "OK";
         JoinRequest request;
-        list<Member>::iterator ret;
+        vector<Member>::iterator ret;
 
         /* Process the join request. */
         request.deserialize(connection);
@@ -260,19 +260,34 @@ ManagerServer::join()
         exit(EXIT_FAILURE);
     }
 
-    joined = true;
-
     return 0;
 }
 
 int
 ManagerServer::leave()
 {
-    if (!joined) {
+    int r;
+    unsigned int leave_port = join_port;
+
+    if (members.size() == 1 && members[0] == me) {
+        /* I'm the only one left, no LEAVE procedure
+         * is necessary. */
         return 0;
     }
 
-    Remote remote("127.0.0.1", join_port);
+    if (members.size()) {
+        Member other;
+
+        srand(time(NULL));
+        do {
+            r = rand() % members.size();
+            other = members[r];
+        } while (other == me);
+        leave_port = other.port;
+cout << "R = " << r << endl;
+    }
+
+    Remote remote("127.0.0.1", leave_port);
     RemoteConnection connection(remote);
     LeaveRequest request("127.0.0.1", me.port);
     Response response;
@@ -290,8 +305,6 @@ ManagerServer::leave()
         cout << "Leave error: " << response.content << endl;
         exit(EXIT_FAILURE);
     }
-
-    joined = false;
 
     return 0;
 }
