@@ -19,14 +19,14 @@
 using namespace std;
 
 
-class ManagerServer : public Server {
+class PeerServer : public Server {
         unsigned int join_port;
         Member me;
 
         vector<Member> members;
 
     public:
-        ManagerServer(unsigned int s_port, unsigned j_port);
+        PeerServer(unsigned int s_port, unsigned j_port);
 
         virtual int process_request(RemoteConnection& connection);
 
@@ -40,7 +40,7 @@ class ManagerServer : public Server {
         void print_members();
 };
 
-ManagerServer::ManagerServer(unsigned int s_port, unsigned int j_port) :
+PeerServer::PeerServer(unsigned int s_port, unsigned int j_port) :
                         Server(s_port), join_port(j_port),
                         me(Remote("127.0.0.1", s_port))
 {
@@ -48,7 +48,7 @@ ManagerServer::ManagerServer(unsigned int s_port, unsigned int j_port) :
 }
 
 void
-ManagerServer::print_members()
+PeerServer::print_members()
 {
     cout << "Members list" << endl;
     for (vector<Member>::iterator it = members.begin();
@@ -58,7 +58,7 @@ ManagerServer::print_members()
 }
 
 vector<Member>::iterator
-ManagerServer::add_member(const Member& member)
+PeerServer::add_member(const Member& member)
 {
     for (vector<Member>::iterator it = members.begin();
                             it != members.end(); it++) {
@@ -73,7 +73,7 @@ ManagerServer::add_member(const Member& member)
 }
 
 int
-ManagerServer::del_member(const Remote& remote)
+PeerServer::del_member(const Remote& remote)
 {
     Member member(remote);
 
@@ -91,7 +91,7 @@ ManagerServer::del_member(const Remote& remote)
 }
 
 void
-ManagerServer::sync_new_member(vector<Member>::iterator nit)
+PeerServer::sync_new_member(vector<Member>::iterator nit)
 {
     UpdateRequest request;
 
@@ -119,7 +119,7 @@ ManagerServer::sync_new_member(vector<Member>::iterator nit)
 }
 
 void
-ManagerServer::notify_old_members_add(vector<Member>::iterator nit)
+PeerServer::notify_old_members_add(vector<Member>::iterator nit)
 {
     if (nit == members.end()) {
         cerr << __func__ << ": Internal error" << endl;
@@ -145,7 +145,7 @@ ManagerServer::notify_old_members_add(vector<Member>::iterator nit)
 }
 
 void
-ManagerServer::notify_old_members_del(const Member& member)
+PeerServer::notify_old_members_del(const Member& member)
 {
     for (vector<Member>::iterator it = members.begin();
                             it != members.end(); it++) {
@@ -165,7 +165,7 @@ ManagerServer::notify_old_members_del(const Member& member)
 }
 
 int
-ManagerServer::process_request(RemoteConnection& connection)
+PeerServer::process_request(RemoteConnection& connection)
 {
     uint8_t opcode;
 
@@ -234,10 +234,10 @@ ManagerServer::process_request(RemoteConnection& connection)
     return 0;
 }
 
-static ManagerServer *server = NULL;
+static PeerServer *server = NULL;
 
 int
-ManagerServer::join()
+PeerServer::join()
 {
     Remote remote("127.0.0.1", join_port);
     RemoteConnection connection(remote);
@@ -264,7 +264,7 @@ ManagerServer::join()
 }
 
 int
-ManagerServer::leave()
+PeerServer::leave()
 {
     int r;
     unsigned int leave_port = join_port;
@@ -350,7 +350,7 @@ main(int argc, char **argv)
         }
     }
 
-    server = new ManagerServer(s_port, j_port);
+    server = new PeerServer(s_port, j_port);
 
     sa.sa_handler = sigint_handler;
     sigemptyset(&sa.sa_mask);
