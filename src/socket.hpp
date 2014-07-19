@@ -3,14 +3,13 @@
 
 #define MPDEBUG 0
 
-#include "common.hpp"
-
 #include <iostream>
 #include <cstring>
 
 using namespace std;
 
 
+enum NodeColor { MPL_RED = 0, MPL_BLACK = 1 };
 typedef char MeshByte;
 
 class SccMeshInterface

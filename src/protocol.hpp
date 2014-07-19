@@ -7,7 +7,6 @@
 #include <stdint.h>
 #include <string>
 
-enum NodeColor { MPL_RED = 0, MPL_BLACK = 1 };
 
 #define MANAGER_PORT    9863
 
@@ -15,8 +14,6 @@ class Member : public Remote {
     public:
         Member() : Remote() { }
         Member(const Remote& r) : Remote(r) { }
-        Member(const Remote& r, unsigned _id, enum NodeColor _c)
-                                    : Remote(r) { }
 };
 
 enum Opcode {

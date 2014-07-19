@@ -1,5 +1,4 @@
-#include "remote.hpp"
-#include "protocol.hpp"
+#include "peer-server.hpp"
 
 #include <iostream>
 #include <sys/socket.h>
@@ -17,30 +16,6 @@
 #include <cerrno>
 #include <ctime>
 #include <cassert>
-
-using namespace std;
-
-
-class PeerServer : public Server {
-        unsigned int join_port;
-        Member me;
-
-        set<Member> members;
-
-    public:
-        PeerServer(unsigned int s_port, unsigned j_port);
-
-        virtual int process_request(RemoteConnection& connection);
-
-        set<Member>::iterator add_member(const Member& remote);
-        int del_member(const Remote& remote);
-        void sync_new_member(set<Member>::iterator nit);
-        void notify_old_members_add(set<Member>::iterator nit);
-        void notify_old_members_del(const Member& remote);
-        int join();
-        int leave();
-        void print_members();
-};
 
 PeerServer::PeerServer(unsigned int s_port, unsigned int j_port) :
                         Server(s_port), join_port(j_port),
@@ -231,8 +206,6 @@ PeerServer::process_request(RemoteConnection& connection)
     return 0;
 }
 
-static PeerServer *server = NULL;
-
 int
 PeerServer::join()
 {
@@ -303,76 +276,3 @@ PeerServer::leave()
     return 0;
 }
 
-static void *
-server_function(void *arg)
-{
-    server->run();
-
-    return NULL;
-}
-
-static void
-sigint_handler(int signum)
-{
-    server->leave();
-
-    exit(EXIT_SUCCESS);
-}
-
-int
-main(int argc, char **argv)
-{
-    unsigned int s_port;
-    unsigned int j_port = ~0U;
-    struct sigaction sa;
-    pthread_t server_tid;
-
-    if (argc < 2) {
-        exit_with_error("USAGE: program PORT [JOINPORT]");
-    }
-    s_port = atoi(argv[1]);
-    if (s_port >= 65535) {
-        errno = EINVAL;
-        exit_with_error("PORT > 65535");
-    }
-
-    if (argc > 2) {
-        j_port = atoi(argv[2]);
-        if (j_port >= 65535) {
-            errno = EINVAL;
-            exit_with_error("PORT > 65535");
-        }
-    }
-
-    server = new PeerServer(s_port, j_port);
-
-    sa.sa_handler = sigint_handler;
-    sigemptyset(&sa.sa_mask);
-    sa.sa_flags = SA_RESTART;
-    if (sigaction(SIGINT, &sa, NULL) == -1) {
-        cout << "   Warning: SIGINT handler registration failed" << endl;
-    }
-    if (sigaction(SIGTERM, &sa, NULL) == -1) {
-        cout << "   Warning: SIGTERM handler registration failed" << endl;
-    }
-
-    /* Start the server. */
-    if (pthread_create(&server_tid, NULL, server_function, NULL)) {
-        exit_with_error("pthread_create()");
-    }
-
-    if (j_port != ~0U) {
-        /* Carry out the join procedure with the manager server. */
-        server->join();
-    }
-
-    /* Wait for the member server to complete - it still holds the memory
-     * for 'server', which is ours. */
-    if (pthread_join(server_tid, NULL)) {
-        exit_with_error("pthread_join()");
-    }
-
-    delete server;
-
-    return 0;
-}
