@@ -17,12 +17,17 @@
 #include <ctime>
 #include <cassert>
 
+using namespace std;
+
+
 PeerServer::PeerServer(unsigned int s_port, unsigned int j_port) :
                         Server(s_port), join_port(j_port),
-                        id(0), prev(members.end()), succ(members.end())
+                        me(members.end()),
+                        prev(members.end()), succ(members.end())
 {
     add_member(Remote("127.0.0.1", s_port));
     me = members.begin();
+    id = s_port * 2 + 4673;
 }
 
 void
@@ -42,6 +47,7 @@ PeerServer::add_member(const Member& member)
 
     ret = members.insert(member);
     if (ret.second) {
+        update_social();
         print_members();
     }
 
@@ -56,7 +62,9 @@ PeerServer::del_member(const Remote& remote)
 
     erased = members.erase(member);
     if (erased) {
+        update_social();
         print_members();
+
         return 0;
     }
 
@@ -280,4 +288,19 @@ PeerServer::leave()
 void
 PeerServer::update_social()
 {
+    if (me == members.end()) {
+        return;
+    }
+
+    prev = me;
+    if (prev == members.begin()) {
+        prev = members.end();
+    }
+    prev--;
+
+    succ = me;
+    succ++;
+    if (succ == members.end()) {
+        succ = members.begin();
+    }
 }

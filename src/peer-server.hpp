@@ -18,19 +18,17 @@
 #include <ctime>
 #include <cassert>
 
-using namespace std;
-
 
 class PeerServer : public Server {
         unsigned int join_port;
 
     protected:
-        set<Member>::iterator me;
-        set<Member> members;
+        std::set<Member>::iterator me;
+        std::set<Member> members;
 
         unsigned int id;
-        set<Member>::iterator prev;
-        set<Member>::iterator succ;
+        std::set<Member>::iterator prev;
+        std::set<Member>::iterator succ;
 
         void update_social();
 
@@ -39,12 +37,18 @@ class PeerServer : public Server {
 
         virtual int process_request(RemoteConnection& connection);
 
-        set<Member>::iterator add_member(const Member& remote);
+        std::set<Member>::iterator add_member(const Member& remote);
         int del_member(const Remote& remote);
-        void sync_new_member(set<Member>::iterator nit);
-        void notify_old_members_add(set<Member>::iterator nit);
+        void sync_new_member(std::set<Member>::iterator nit);
+        void notify_old_members_add(std::set<Member>::iterator nit);
         void notify_old_members_del(const Member& remote);
         int join();
         int leave();
         void print_members();
+
+        unsigned int get_unique() const { return id; }
+        Member get_me() const { return *me; }
+        Member get_prev() const { return *prev; }
+        Member get_succ() const { return *succ; }
+        unsigned int num_peers() const { return members.size(); }
 };
