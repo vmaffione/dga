@@ -15,13 +15,10 @@ typedef char MeshByte;
 class SccMeshInterface
 {
     public:
-        SccMeshInterface();
-        void getMyMeshConfiguration(int& prev, int& succ, NodeColor& color); // if there is only one core available, this function assign -1 to the arguments
         int getMyID();
         int numberOfActiveCores() { return 1; }
         void sendIndividuals(MeshByte* msg, size_t totalSize, int ID);
         void receiveIndividuals(MeshByte* msg, size_t totalSize, int ID);
-        ~SccMeshInterface() { }
 };
 
 #endif

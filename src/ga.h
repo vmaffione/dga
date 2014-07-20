@@ -13,6 +13,7 @@ using namespace std; // per colpa dell'operatore ostream& operator<< di IT
 
 #include "ga-error.h"
 #include "ga-utils.h"
+#include "peer-server.hpp"
 
 #define DEBUG 0
 
@@ -141,10 +142,11 @@ class GeneticAlgorithm
         int prev, succ;
         NodeColor myColor;
 
-
         GAUtils::SelectionFunctionType SFType;
 
         double scalingCoeff;
+
+        PeerServer& server;
 
         /* MATLAB rankScaling */
         void performFitnessScaling();
@@ -165,18 +167,22 @@ class GeneticAlgorithm
     public:
         GeneticAlgorithm(FitnessFunctionPT ffpt, MutationFunctionPT mfpt,
                          CrossoverFunctionPT cfpt,
-                         GAUtils::SelectionFunctionType sft);
+                         GAUtils::SelectionFunctionType sft,
+                        PeerServer& server);
         GeneticAlgorithm(FitnessFunctionPT ffpt, MutationFunctionPT mfpt,
                          GAUtils::CrossoverFunctionType cft,
-                         GAUtils::SelectionFunctionType sft);
+                         GAUtils::SelectionFunctionType sft,
+                        PeerServer& server);
         GeneticAlgorithm(FitnessFunctionPT ffpt,
                          GAUtils::MutationFunctionType mft,
                          CrossoverFunctionPT cfpt,
-                         GAUtils::SelectionFunctionType sft);
+                         GAUtils::SelectionFunctionType sft,
+                        PeerServer& server);
         GeneticAlgorithm(FitnessFunctionPT ffpt,
                          GAUtils::MutationFunctionType mft,
                          GAUtils::CrossoverFunctionType cft,
-                         GAUtils::SelectionFunctionType sft);
+                         GAUtils::SelectionFunctionType sft,
+                        PeerServer& server);
 
         /* Run the genetic algorithm with a user-provided initial
            population. */
@@ -286,7 +292,7 @@ void GeneticAlgorithm<IT,OT>::commonConstructor()
 
     gaUtils.setMeshInterfacePointer(meshInterfacePointer);
 
-    meshInterfacePointer->getMyMeshConfiguration(prev, succ, myColor);
+    prev = succ = -1; // TODO temporary: these will go away
 
     sendBuffer = receiveBuffer = NULL;
     pointersBuffer = NULL;
@@ -305,7 +311,8 @@ template <class IT, class OT>
 GeneticAlgorithm<IT,OT>::GeneticAlgorithm(FitnessFunctionPT ffpt,
                                           MutationFunctionPT mfpt,
                                           CrossoverFunctionPT cfpt, 
-                                          GAUtils::SelectionFunctionType sft
+                                          GAUtils::SelectionFunctionType sft,
+                                          PeerServer& _server
                                         ) : fitnessFunctionPointer(ffpt), 
                                             mutationFunctionPointer(mfpt),
                                             mutationFunctionPointerTM(NULL),
@@ -315,7 +322,8 @@ GeneticAlgorithm<IT,OT>::GeneticAlgorithm(FitnessFunctionPT ffpt,
                                             nextPopulation(NULL),
                                             selectedParents(NULL),
                                             infoHeap(0),
-                                            SFType(sft)
+                                            SFType(sft),
+                                            server(_server)
 {
     commonConstructor();
 }
@@ -325,7 +333,8 @@ template <class IT, class OT>
 GeneticAlgorithm<IT,OT>::GeneticAlgorithm(FitnessFunctionPT ffpt,
                                           MutationFunctionPT mfpt,
                                           GAUtils::CrossoverFunctionType cft,
-                                          GAUtils::SelectionFunctionType sft
+                                          GAUtils::SelectionFunctionType sft,
+                                          PeerServer& _server
                                         ) : fitnessFunctionPointer(ffpt),
                                             mutationFunctionPointer(mfpt),
                                             mutationFunctionPointerTM(NULL),
@@ -334,7 +343,8 @@ GeneticAlgorithm<IT,OT>::GeneticAlgorithm(FitnessFunctionPT ffpt,
                                             nextPopulation(NULL),
                                             selectedParents(NULL),
                                             infoHeap(0),
-                                            SFType(sft)
+                                            SFType(sft),
+                                            server(_server)
 {
     commonConstructor();
     /* Demultiplexing crossover function enumeration. */
@@ -346,7 +356,8 @@ template <class IT, class OT>
 GeneticAlgorithm<IT,OT>::GeneticAlgorithm(FitnessFunctionPT ffpt,
                                           GAUtils::MutationFunctionType mft,
                                           CrossoverFunctionPT cfpt,
-                                          GAUtils::SelectionFunctionType sft
+                                          GAUtils::SelectionFunctionType sft,
+                                          PeerServer& _server
                                         ) : fitnessFunctionPointer(ffpt),
                                             mutationFunctionPointer(NULL),
                                             mutationFunctionType(mft),
@@ -356,7 +367,8 @@ GeneticAlgorithm<IT,OT>::GeneticAlgorithm(FitnessFunctionPT ffpt,
                                             nextPopulation(NULL),
                                             selectedParents(NULL),
                                             infoHeap(0),
-                                            SFType(sft)
+                                            SFType(sft),
+                                            server(_server)
 {
     commonConstructor();
     /* Demultiplexing mutation function enumeration. */
@@ -370,7 +382,8 @@ template <class IT, class OT>
 GeneticAlgorithm<IT,OT>::GeneticAlgorithm(FitnessFunctionPT ffpt,
                                           GAUtils::MutationFunctionType mft,
                                           GAUtils::CrossoverFunctionType cft,
-                                          GAUtils::SelectionFunctionType sft
+                                          GAUtils::SelectionFunctionType sft,
+                                          PeerServer& _server
                                         ) : fitnessFunctionPointer(ffpt),
                                             mutationFunctionPointer(NULL),
                                             mutationFunctionType(mft),
@@ -379,7 +392,8 @@ GeneticAlgorithm<IT,OT>::GeneticAlgorithm(FitnessFunctionPT ffpt,
                                             nextPopulation(NULL),
                                             selectedParents(NULL),
                                             infoHeap(0),
-                                            SFType(sft)
+                                            SFType(sft),
+                                            server(_server)
 {
     commonConstructor();
     /* Demultiplexing crossover function enumeration */

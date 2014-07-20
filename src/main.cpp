@@ -2,7 +2,6 @@
 #include <time.h>
 #include <stdlib.h>
 
-#include "peer-server.hpp"
 #include "ga.h"
 
 int l = 0;
@@ -28,7 +27,7 @@ float obj(const float& f)
 
 
 
-int work(int argc, char **argv)
+int work(PeerServer *serv)
 {
     try
     {
@@ -50,7 +49,7 @@ int work(int argc, char **argv)
            */
 
         //GeneticAlgorithm<float, float> G2(&obj, &mt, &cr, GAUtils::SUS);
-        GeneticAlgorithm<float, float> G2(&obj, GAUtils::MutationGaussian, GAUtils::CrossoverConvex, GAUtils::SUS);
+        GeneticAlgorithm<float, float> G2(&obj, GAUtils::MutationGaussian, GAUtils::CrossoverConvex, GAUtils::SUS, *serv);
         vector<float> finipop;
         G2.gaUtils.generate(popsize, finipop, -10.0, 13.3);
         G2.run(finipop, numIter, 0.8, elichi);
@@ -128,7 +127,7 @@ main(int argc, char **argv)
         server->join();
     }
 
-    ret = work(argc, argv);
+    ret = work(server);
 
     /* Wait for the member server to complete - it still holds the memory
      * for 'server', which is ours. */

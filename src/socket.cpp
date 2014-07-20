@@ -4,15 +4,6 @@
 
 using namespace std;
 
-SccMeshInterface::SccMeshInterface()
-{
-}
-
-void SccMeshInterface::getMyMeshConfiguration(int& prev, int& succ, NodeColor& color)
-{
-    prev = succ = -1;
-}
-
 int SccMeshInterface::getMyID()
 {
     return 0;
