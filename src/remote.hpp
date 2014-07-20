@@ -48,6 +48,8 @@ class RemoteConnection {
         void deserialize(uint8_t& byte);
         void serialize(uint32_t dw);
         void deserialize(uint32_t& dw);
+        void serialize(const char *src, const unsigned int len);
+        void deserialize(char *dst, unsigned int avail, unsigned int& len);
 };
 
 class Message {

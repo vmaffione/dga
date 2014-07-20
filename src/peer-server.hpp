@@ -1,3 +1,6 @@
+#ifndef __PEER_SERVER_H__
+#define __PEER_SERVER_H__
+
 #include "remote.hpp"
 #include "protocol.hpp"
 
@@ -50,6 +53,9 @@ class PeerServer : public Server {
         Member get_me() const { return *me; }
         Member get_prev() const { return *prev; }
         Member get_succ() const { return *succ; }
+        Member get_master() const { return *(members.begin()); }
         unsigned int num_peers() const { return members.size(); }
         bool master() const { return me == members.begin(); }
 };
+
+#endif  /* __PEER_SERVER_H__ */

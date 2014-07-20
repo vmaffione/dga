@@ -18,6 +18,30 @@ using namespace std; // per colpa dell'operatore ostream& operator<< di IT
 #define DEBUG 0
 
 
+class MigrationMsg : public Message {
+    public:
+        char *buf;
+        unsigned int len;
+
+        MigrationMsg() : buf(NULL), len(0) { }
+        MigrationMsg(char *b, unsigned int l) : buf(b), len(l) { }
+
+        void serialize(RemoteConnection& remote) const
+        {
+            remote.serialize(buf, len);
+        }
+
+        void deserialize(RemoteConnection& remote)
+        {
+            unsigned int retlen;
+
+            remote.deserialize(buf, len, retlen);
+            if (retlen != len) {
+                std::cerr << __func__ << "Migration problem" << endl;
+            }
+        }
+};
+
 /************************** MAIN CLASS DECLARATION **************************/
 
 template <class IT, class OT>
@@ -290,15 +314,13 @@ void GeneticAlgorithm<IT,OT>::commonConstructor()
 
     meshInterfacePointer = new SccMeshInterface();
 
-    gaUtils.setMeshInterfacePointer(meshInterfacePointer);
-
     prev = succ = -1; // TODO temporary: these will go away
 
     sendBuffer = receiveBuffer = NULL;
     pointersBuffer = NULL;
     receivedIndividualsScores = NULL;
 
-    cout << "My ID is " << meshInterfacePointer->getMyID() <<
+    cout << "My unique is " << server.get_unique() <<
             ", my color is " << ((myColor==MPL_RED) ? "RED" : "BLACK") <<
             ", prevID = " << prev << ", succID = " << succ << "\n";
 
@@ -310,10 +332,10 @@ void GeneticAlgorithm<IT,OT>::commonConstructor()
 template <class IT, class OT>
 GeneticAlgorithm<IT,OT>::GeneticAlgorithm(FitnessFunctionPT ffpt,
                                           MutationFunctionPT mfpt,
-                                          CrossoverFunctionPT cfpt, 
+                                          CrossoverFunctionPT cfpt,
                                           GAUtils::SelectionFunctionType sft,
                                           PeerServer& _server
-                                        ) : fitnessFunctionPointer(ffpt), 
+                                        ) : fitnessFunctionPointer(ffpt),
                                             mutationFunctionPointer(mfpt),
                                             mutationFunctionPointerTM(NULL),
                                             crossoverFunctionPointer(cfpt),
@@ -323,7 +345,8 @@ GeneticAlgorithm<IT,OT>::GeneticAlgorithm(FitnessFunctionPT ffpt,
                                             selectedParents(NULL),
                                             infoHeap(0),
                                             SFType(sft),
-                                            server(_server)
+                                            server(_server),
+                                            gaUtils(_server)
 {
     commonConstructor();
 }
@@ -344,7 +367,8 @@ GeneticAlgorithm<IT,OT>::GeneticAlgorithm(FitnessFunctionPT ffpt,
                                             selectedParents(NULL),
                                             infoHeap(0),
                                             SFType(sft),
-                                            server(_server)
+                                            server(_server),
+                                            gaUtils(_server)
 {
     commonConstructor();
     /* Demultiplexing crossover function enumeration. */
@@ -368,7 +392,8 @@ GeneticAlgorithm<IT,OT>::GeneticAlgorithm(FitnessFunctionPT ffpt,
                                             selectedParents(NULL),
                                             infoHeap(0),
                                             SFType(sft),
-                                            server(_server)
+                                            server(_server),
+                                            gaUtils(_server)
 {
     commonConstructor();
     /* Demultiplexing mutation function enumeration. */
@@ -393,7 +418,8 @@ GeneticAlgorithm<IT,OT>::GeneticAlgorithm(FitnessFunctionPT ffpt,
                                             selectedParents(NULL),
                                             infoHeap(0),
                                             SFType(sft),
-                                            server(_server)
+                                            server(_server),
+                                            gaUtils(_server)
 {
     commonConstructor();
     /* Demultiplexing crossover function enumeration */
@@ -440,7 +466,7 @@ void GeneticAlgorithm<IT,OT>::stochasticUniversalSampling()
 
     /* If not enough individuals selected, fill with first individual
        (the best one) */
-    while (--i >= 0) 
+    while (--i >= 0)
         selectedParents[i] = infoHeap.heapArray[0].pointer;
     /*----------------------------------------------------------------------
       The check for (i > 0) in the outer while loop as well as the loop that
@@ -488,9 +514,9 @@ void GeneticAlgorithm<IT,OT>::shuffleParents()
 template <class IT, class OT>
 void GeneticAlgorithm<IT,OT>::gatherResults()
 {
-    if (meshInterfacePointer->getMyID() == 0)
+    if (server.master())
     {
-        int numCores = meshInterfacePointer->numberOfActiveCores();
+        int numCores = server.num_peers();
         IT** bestIndividuals = new IT*[numCores];
         OT* bestScores = new  OT[numCores];
         for (int i=0; i<numCores; i++) {
@@ -519,9 +545,13 @@ void GeneticAlgorithm<IT,OT>::gatherResults()
     else
     {
         IT** bestIndividual = new IT*;
+        RemoteConnection connection(server.get_master());
+        MigrationMsg msg(sendBuffer, NMI * sizeof(IT));
+
         *bestIndividual = infoHeap.heapArray[0].pointer;
         gaUtils.serializeAndCopy<IT>(sendBuffer, bestIndividual, 1);
-        meshInterfacePointer->sendIndividuals(sendBuffer, sizeof(IT), 0);
+        msg.serialize(connection);
+
         delete *bestIndividual;
     }
 }
@@ -542,7 +572,7 @@ void GeneticAlgorithm<IT,OT>::gaCore()
     }
 
     /* Initializes random generator. */
-    rand_init(GA_BASE_SEED + GA_MUL_SEED * meshInterfacePointer->getMyID());
+    rand_init(GA_BASE_SEED + GA_MUL_SEED * server.get_unique());
 
     unsigned int numGenerations = 1;
     unsigned int migrationCountdown = MP;
@@ -554,7 +584,7 @@ void GeneticAlgorithm<IT,OT>::gaCore()
         infoHeap.sortLocally();
 
         if (DEBUG /* && meshInterfacePointer->getMyID()==0 */) {
-            cout << "Core " << meshInterfacePointer->getMyID() <<
+            cout << "Core " << server.get_unique() <<
                     ", generazione " << numGenerations << ":\n";
             for (unsigned int i=0; i<N; i++)
                 cout << *(infoHeap.heapArray[i].pointer) <<
@@ -562,7 +592,7 @@ void GeneticAlgorithm<IT,OT>::gaCore()
         }
 
         /* Carries out migration procedures. */
-        if (meshInterfacePointer->numberOfActiveCores() && migrationCountdown == 0)
+        if (server.num_peers() > 1 && migrationCountdown == 0)
         {
             migrationCountdown = MP;
 
@@ -584,17 +614,23 @@ void GeneticAlgorithm<IT,OT>::gaCore()
             */
 
             if (myColor == MPL_RED) {
-                meshInterfacePointer->sendIndividuals(sendBuffer,
-                                                      NMI * sizeof(IT), succ);
+                RemoteConnection connection(server.get_succ());
+                MigrationMsg msg(sendBuffer, NMI * sizeof(IT));
+
+                msg.serialize(connection);
+
                 meshInterfacePointer->receiveIndividuals(receiveBuffer,
                                                          NMI * sizeof(IT),
                                                          prev);
             } else /* (myColor == MPL_BLACK) */ {
+                RemoteConnection connection(server.get_succ());
+                MigrationMsg msg(sendBuffer, NMI * sizeof(IT));
+
                 meshInterfacePointer->receiveIndividuals(receiveBuffer,
                                                          NMI * sizeof(IT),
                                                          prev);
-                meshInterfacePointer->sendIndividuals(sendBuffer,
-                                                      NMI * sizeof(IT), succ);
+                msg.serialize(connection);
+
             }
 
             /* Discards the NMI worst individuals (infoHeap.heapArray is

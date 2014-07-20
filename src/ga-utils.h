@@ -26,6 +26,7 @@ ostream& operator<<(ostream& os, const DoubleVector& r)
 
 
 #include "socket.hpp"
+#include "peer-server.hpp"
 
 //  Agner Fog's random number generator librares
 #include "randoma.h"  // uniform generator
@@ -54,6 +55,7 @@ class GAUtils
         unsigned int D;  // DA RENDERE PRIVATO!!! ORA E' PUBBLICO PERCHè LO UTILIZZANO LE STAMPE DI DEBUG IN GA
 
     private:
+        PeerServer& server;
         double* mgScaleV;     // scale vector for mutationGaussian
         float shrink;        // shrink factor for mutationGaussian
 
@@ -63,7 +65,7 @@ class GAUtils
         StochasticLib1 NURG;  // non-uniform random generator
 
     public:
-        GAUtils(): D(0), mgScaleV(NULL), shrink(1.0), NURG(NURG_SEED) { }   // DA FARE: NURG dovrebbe essere inizializzato in modo diverso su core diversi...
+        GAUtils(PeerServer &_server): D(0), server(_server), mgScaleV(NULL), shrink(1.0), NURG(NURG_SEED) { }   // DA FARE: NURG dovrebbe essere inizializzato in modo diverso su core diversi...
 
         template <class T> void mutationGaussian(const T& t, T& res);
         template <class T> void crossoverConvex(const T& t1, const T& t2, T& res);
@@ -78,9 +80,6 @@ class GAUtils
         void generate(unsigned int popSize, vector<double>& v, double lb, double ub);
         void generate(unsigned int N, vector<FloatVector>& v, const vector<float>& lbs, const vector<float>& ubs);
         void generate(unsigned int N, vector<DoubleVector>& v, const vector<double>& lbs, const vector<double>& ubs);
-
-        void setMeshInterfacePointer(SccMeshInterface* mip) { meshInterfacePointer = mip; }
-        SccMeshInterface* meshInterfacePointer;
 
         /*
            class RandomGenerator
@@ -309,7 +308,7 @@ void GAUtils::generate(unsigned int popSize, vector<float>& v, float lb, float u
     mgScaleV[0] = ub - lb;
     D = 1;
 
-    rand_init(GEN_BASE_SEED + GEN_MUL_SEED * (meshInterfacePointer->getMyID()));
+    rand_init(GEN_BASE_SEED + GEN_MUL_SEED * (server.get_unique()));
     for (unsigned int i=0; i<popSize; i++)
         v[i] = lb + (ub - lb) * rand_float();
 
@@ -337,7 +336,7 @@ void GAUtils::generate(unsigned int popSize, vector<double>& v, double lb, doubl
     mgScaleV[0] = ub - lb;
     D = 1;
 
-    rand_init(GEN_BASE_SEED + GEN_MUL_SEED * (meshInterfacePointer->getMyID()));
+    rand_init(GEN_BASE_SEED + GEN_MUL_SEED * (server.get_unique()));
     for (unsigned int i=0; i<popSize; i++)
         v[i] = lb + (ub - lb) * rand_float();
 
@@ -385,7 +384,7 @@ void GAUtils::generate(unsigned int popSize, vector<FloatVector>& v, const vecto
     D = dim;
 
     // generation of the initial population
-    rand_init(GEN_BASE_SEED + GEN_MUL_SEED * (meshInterfacePointer->getMyID()));
+    rand_init(GEN_BASE_SEED + GEN_MUL_SEED * (server.get_unique()));
     for (unsigned int i=0; i<popSize; i++)
         for (unsigned int d=0; d<dim; d++)
             v[i][d] = lbs[d] + (ubs[d] - lbs[d]) * rand_float();
@@ -438,7 +437,7 @@ void GAUtils::generate(unsigned int popSize, vector<DoubleVector>& v, const vect
     D = dim;
 
     // generation of the initial population
-    rand_init(GEN_BASE_SEED + GEN_MUL_SEED * (meshInterfacePointer->getMyID()));
+    rand_init(GEN_BASE_SEED + GEN_MUL_SEED * (server.get_unique()));
     for (unsigned int i=0; i<popSize; i++)
         for (unsigned int d=0; d<dim; d++)
             v[i][d] = lbs[d] + (ubs[d] - lbs[d]) * rand_float();

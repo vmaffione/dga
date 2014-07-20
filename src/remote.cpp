@@ -259,3 +259,35 @@ void RemoteConnection::serialize(const string& str)
     serialize(static_cast<uint8_t>(len));
     this->send_message(str.c_str(), len);
 }
+
+void RemoteConnection::deserialize(char *dst, unsigned int avail,
+                                   unsigned int& retlen)
+{
+    int n;
+    uint8_t lenbyte;
+
+    deserialize(lenbyte);
+    retlen = lenbyte;
+    if (retlen <= 0) {
+        return;
+    }
+
+    if (retlen > avail) {
+        retlen = avail;
+        return;
+    }
+
+    n = this->recv_message(dst, retlen);
+    if (n <= 0) {
+        retlen = 0;
+        return;
+    }
+
+    return;
+}
+
+void RemoteConnection::serialize(const char *src, const unsigned int len)
+{
+    serialize(static_cast<uint8_t>(len));
+    this->send_message(src, len);
+}
