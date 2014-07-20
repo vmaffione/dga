@@ -51,4 +51,5 @@ class PeerServer : public Server {
         Member get_prev() const { return *prev; }
         Member get_succ() const { return *succ; }
         unsigned int num_peers() const { return members.size(); }
+        bool master() const { return me == members.begin(); }
 };

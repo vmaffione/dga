@@ -4,15 +4,6 @@
 
 using namespace std;
 
-void SccMeshInterface::MessagePassingLibraryInit(int* argcp, char*** argvp)
-{
-}
-
-void SccMeshInterface::MessagePassingLibraryFinalize()
-{
-    cout << "MACHETE DISTRUGGE!\n";
-}
-
 SccMeshInterface::SccMeshInterface()
 {
 }

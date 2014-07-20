@@ -82,9 +82,6 @@ class GAUtils
         void setMeshInterfacePointer(SccMeshInterface* mip) { meshInterfacePointer = mip; }
         SccMeshInterface* meshInterfacePointer;
 
-        static bool is_MPL_up;
-        static void frameworkInit(int* argcp, char*** argvp);
-
         /*
            class RandomGenerator
            {
@@ -96,17 +93,6 @@ class GAUtils
            };
            RandomGenerator randomGenerator;*/
 };
-
-bool GAUtils::is_MPL_up = false;
-
-void GAUtils::frameworkInit(int* argcp, char*** argvp)
-{
-    if (!GAUtils::is_MPL_up)
-    {
-        SccMeshInterface::MessagePassingLibraryInit(argcp, argvp);
-        GAUtils::is_MPL_up = true;
-    }
-}
 
 
 // SERIALIZATION
@@ -468,17 +454,5 @@ void GAUtils::generate(unsigned int popSize, vector<DoubleVector>& v, const vect
        } */
 }
 ////////////////////////////////////////////////////////////////////////////////
-
-
-/* after the the main function execution, the destructor of "destroyer" closes
-   the message passing library without burden the user*/
-class Destroyer
-{
-    public:
-        ~Destroyer() { SccMeshInterface::MessagePassingLibraryFinalize(); }
-};
-
-Destroyer destroyer;
-
 
 #endif

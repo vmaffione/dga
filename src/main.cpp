@@ -30,8 +30,6 @@ float obj(const float& f)
 
 int work(int argc, char **argv)
 {
-    GAUtils::frameworkInit(&argc, &argv);
-
     try
     {
         unsigned int popsize = 30;

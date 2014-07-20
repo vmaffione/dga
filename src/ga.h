@@ -133,10 +133,6 @@ class GeneticAlgorithm
         static const int GA_BASE_SEED = 961114537;
         static const int GA_MUL_SEED = 113;
 
-        /* True if the genetic algorithm runs on multiple execution units
-           which communicate between them, false otherwise. */
-        bool distribuitedComputation;
-
         MeshByte* sendBuffer;
         MeshByte* receiveBuffer;
         IT** pointersBuffer;
@@ -291,10 +287,6 @@ void GeneticAlgorithm<IT,OT>::commonConstructor()
     gaUtils.setMeshInterfacePointer(meshInterfacePointer);
 
     meshInterfacePointer->getMyMeshConfiguration(prev, succ, myColor);
-    if (prev == -1) /* (prev==-1) if and only if (succ==-1) */
-        distribuitedComputation = false;
-    else
-        distribuitedComputation = true;
 
     sendBuffer = receiveBuffer = NULL;
     pointersBuffer = NULL;
@@ -556,7 +548,7 @@ void GeneticAlgorithm<IT,OT>::gaCore()
         }
 
         /* Carries out migration procedures. */
-        if (distribuitedComputation && migrationCountdown == 0)
+        if (meshInterfacePointer->numberOfActiveCores() && migrationCountdown == 0)
         {
             migrationCountdown = MP;
 
