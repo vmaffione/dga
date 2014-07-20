@@ -25,8 +25,14 @@ class PeerServer : public Server {
         unsigned int join_port;
 
     protected:
-        Member me;
+        set<Member>::iterator me;
         set<Member> members;
+
+        unsigned int id;
+        set<Member>::iterator prev;
+        set<Member>::iterator succ;
+
+        void update_social();
 
     public:
         PeerServer(unsigned int s_port, unsigned j_port);

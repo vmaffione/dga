@@ -19,9 +19,10 @@
 
 PeerServer::PeerServer(unsigned int s_port, unsigned int j_port) :
                         Server(s_port), join_port(j_port),
-                        me(Remote("127.0.0.1", s_port))
+                        id(0), prev(members.end()), succ(members.end())
 {
-    add_member(me);
+    add_member(Remote("127.0.0.1", s_port));
+    me = members.begin();
 }
 
 void
@@ -211,7 +212,7 @@ PeerServer::join()
 {
     Remote remote("127.0.0.1", join_port);
     RemoteConnection connection(remote);
-    JoinRequest message("127.0.0.1", me.port);
+    JoinRequest message("127.0.0.1", me->port);
     Response response;
 
     if (!connection.open) {
@@ -238,7 +239,7 @@ PeerServer::leave()
 {
     unsigned int leave_port = join_port;
 
-    if (members.size() == 1 && *(members.begin()) == me) {
+    if (members.size() == 1 && *(members.begin()) == *me) {
         /* I'm the only one left, no LEAVE procedure
          * is necessary. */
         return 0;
@@ -247,7 +248,7 @@ PeerServer::leave()
     if (members.size()) {
         set<Member>::iterator it = members.begin();
 
-        while (it != members.end() && *it == me) {
+        while (it != members.end() && *it == *me) {
             it++;
         }
         assert(it != members.end());
@@ -256,7 +257,7 @@ PeerServer::leave()
 
     Remote remote("127.0.0.1", leave_port);
     RemoteConnection connection(remote);
-    LeaveRequest request("127.0.0.1", me.port);
+    LeaveRequest request("127.0.0.1", me->port);
     Response response;
 
     if (!connection.open) {
@@ -276,3 +277,7 @@ PeerServer::leave()
     return 0;
 }
 
+void
+PeerServer::update_social()
+{
+}
