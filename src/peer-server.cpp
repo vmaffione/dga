@@ -210,6 +210,9 @@ PeerServer::process_request(RemoteConnection& connection)
                 del_member(m);
             }
         }
+    } else {
+        /* Forward the request to the derived class. */
+        process_message(opcode, connection);
     }
 
     return 0;

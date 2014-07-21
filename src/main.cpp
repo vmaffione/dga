@@ -27,7 +27,7 @@ float obj(const float& f)
 
 
 
-int work(PeerServer *serv)
+int work(GAPeerServer *serv)
 {
     try
     {
@@ -61,7 +61,7 @@ int work(PeerServer *serv)
     return 0;
 }
 
-static PeerServer *server = NULL;
+static GAPeerServer *server = NULL;
 
 static void *
 server_function(void *arg)
@@ -105,7 +105,7 @@ main(int argc, char **argv)
         }
     }
 
-    server = new PeerServer(s_port, j_port);
+    server = new GAPeerServer(s_port, j_port);
 
     sa.sa_handler = sigint_handler;
     sigemptyset(&sa.sa_mask);

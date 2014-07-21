@@ -26,20 +26,15 @@ class MigrationMsg : public Message {
         MigrationMsg() : buf(NULL), len(0) { }
         MigrationMsg(char *b, unsigned int l) : buf(b), len(l) { }
 
-        void serialize(RemoteConnection& remote) const
-        {
-            remote.serialize(buf, len);
-        }
+        void serialize(RemoteConnection& remote) const;
+        void deserialize(RemoteConnection& remote);
+};
 
-        void deserialize(RemoteConnection& remote)
-        {
-            unsigned int retlen;
-
-            remote.deserialize(buf, len, retlen);
-            if (retlen != len) {
-                std::cerr << __func__ << "Migration problem" << endl;
-            }
-        }
+class GAPeerServer : public PeerServer {
+    public:
+        GAPeerServer(unsigned int s_port, unsigned int j_port);
+        int process_message(uint8_t opcode,
+                                    RemoteConnection& connection);
 };
 
 /************************** MAIN CLASS DECLARATION **************************/

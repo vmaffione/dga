@@ -56,6 +56,9 @@ class PeerServer : public Server {
         Member get_master() const { return *(members.begin()); }
         unsigned int num_peers() const { return members.size(); }
         bool master() const { return me == members.begin(); }
+
+        virtual int process_message(uint8_t opcode,
+                                    RemoteConnection& connection) = 0;
 };
 
 #endif  /* __PEER_SERVER_H__ */
