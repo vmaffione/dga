@@ -4,7 +4,6 @@
 #include <vector>
 #include <fstream>
 
-#include "socket.hpp"
 #include "peer-server.hpp"
 
 using namespace std;

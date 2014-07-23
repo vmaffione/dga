@@ -1,7 +1,7 @@
 CC=g++
 CXXFLAGS=-g -Wall
 ARCHBITS=$(shell getconf LONG_BIT)
-MAIN_OBJS=main.o socket.o stoc1.o randomaelf$(ARCHBITS).a peer-server.o remote.o protocol.o ga.o ga-utils.o
+MAIN_OBJS=main.o stoc1.o randomaelf$(ARCHBITS).a peer-server.o remote.o protocol.o ga.o ga-utils.o
 EXES=main
 
 all: $(EXES)
@@ -9,7 +9,7 @@ all: $(EXES)
 main: $(MAIN_OBJS)
 	$(CC) -o $@ $(MAIN_OBJS) -lpthread
 
-main.o: ga.h ga-utils.h socket.hpp peer-server.hpp
+main.o: ga.h ga-utils.h peer-server.hpp
 
 peer-server.o: remote.hpp protocol.hpp
 

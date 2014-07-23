@@ -178,9 +178,7 @@ class GeneticAlgorithm
         GAReceiveBuffer *receiveBuffer;
         IT** pointersBuffer;
         OT* receivedIndividualsScores;
-        SccMeshInterface* meshInterfacePointer;
         int prev, succ;
-        NodeColor myColor;
 
         GAUtils::SelectionFunctionType SFType;
 
@@ -328,8 +326,6 @@ void GeneticAlgorithm<IT,OT>::commonConstructor()
     N = 0;
     maxGenerations = -1; CF = -1.0; NEC = -1; MF = -1.0; MP = -1;
 
-    meshInterfacePointer = new SccMeshInterface();
-
     prev = succ = -1; // TODO temporary: these will go away
 
     sendBuffer = NULL;
@@ -338,7 +334,6 @@ void GeneticAlgorithm<IT,OT>::commonConstructor()
     receivedIndividualsScores = NULL;
 
     cout << "My unique is " << server.get_unique() <<
-            ", my color is " << ((myColor==MPL_RED) ? "RED" : "BLACK") <<
             ", prevID = " << prev << ", succID = " << succ << "\n";
 
     std::cout << "A genetic algorithm object was generated!\n";
