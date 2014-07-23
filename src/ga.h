@@ -509,7 +509,7 @@ void GeneticAlgorithm<IT,OT>::shuffleParents()
 template <class IT, class OT>
 void GeneticAlgorithm<IT,OT>::gatherResults()
 {
-    if (server.master())
+    if (1 || server.master())
     {
         int numCores = server.num_peers();
         IT** bestIndividuals = new IT*[numCores];
@@ -587,7 +587,7 @@ void GeneticAlgorithm<IT,OT>::gaCore()
         }
 
         /* Carries out migration procedures. */
-        if (server.num_peers() > 1 && migrationCountdown == 0)
+        if (0 && server.num_peers() > 1 && migrationCountdown == 0)
         {
             migrationCountdown = MP;
 
