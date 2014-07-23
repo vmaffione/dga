@@ -567,8 +567,7 @@ void GeneticAlgorithm<IT,OT>::gaCore()
         }
 
         /* Carries out migration procedures. */
-        if (0 && server.num_peers() > 1 && migrationCountdown == 0)
-        {
+        if (server.num_peers() > 1 && migrationCountdown == 0) {
             migrationCountdown = MP;
 
             /* Gets the pointers to the best NMI individuals (here
@@ -592,7 +591,14 @@ void GeneticAlgorithm<IT,OT>::gaCore()
             RemoteConnection connection(server.get_succ());
             MigrationMsg msg(sendBuffer, NMI * sizeof(IT));
 
-            msg.serialize(connection);
+            if (connection.open) {
+                msg.serialize(connection);
+                connection.close();
+            } else {
+                std::cerr << __func__ << ": Cannot open a connection to "
+                            "succ " << server.get_succ().ip << ":" <<
+                            server.get_succ().port << endl;
+            }
 
             receiveBuffer->lock();
 
