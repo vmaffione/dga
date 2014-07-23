@@ -7,6 +7,8 @@
 #include <string>
 #include <cmath>
 #include <cstring>
+#include <stdint.h>
+#include <pthread.h>
 
 
 using namespace std; // per colpa dell'operatore ostream& operator<< di IT
@@ -18,23 +20,42 @@ using namespace std; // per colpa dell'operatore ostream& operator<< di IT
 #define DEBUG 0
 
 
+class GAReceiveBuffer {
+        pthread_mutex_t lock_;
+
+    public:
+        uint8_t *ptr;
+        unsigned int size;
+        unsigned int len;
+
+        GAReceiveBuffer(unsigned int sz);
+        ~GAReceiveBuffer();
+        void lock();
+        void unlock();
+};
+
+#define MIGRATE_MSG_ID  95
+
 class MigrationMsg : public Message {
     public:
-        char *buf;
+        uint8_t *buf;
         unsigned int len;
 
         MigrationMsg() : buf(NULL), len(0) { }
-        MigrationMsg(char *b, unsigned int l) : buf(b), len(l) { }
+        MigrationMsg(uint8_t *b, unsigned int l) : buf(b), len(l) { }
 
-        void serialize(RemoteConnection& remote) const;
-        void deserialize(RemoteConnection& remote);
+        int serialize(RemoteConnection& remote) const;
+        int deserialize(RemoteConnection& remote);
 };
 
 class GAPeerServer : public PeerServer {
+        GAReceiveBuffer *recvbuf;
+
     public:
         GAPeerServer(unsigned int s_port, unsigned int j_port);
         int process_message(uint8_t opcode,
                                     RemoteConnection& connection);
+        void set_receive_buffer(GAReceiveBuffer *b);
 };
 
 /************************** MAIN CLASS DECLARATION **************************/
@@ -153,8 +174,8 @@ class GeneticAlgorithm
         static const int GA_BASE_SEED = 961114537;
         static const int GA_MUL_SEED = 113;
 
-        MeshByte* sendBuffer;
-        MeshByte* receiveBuffer;
+        uint8_t* sendBuffer;
+        GAReceiveBuffer *receiveBuffer;
         IT** pointersBuffer;
         OT* receivedIndividualsScores;
         SccMeshInterface* meshInterfacePointer;
@@ -165,7 +186,7 @@ class GeneticAlgorithm
 
         double scalingCoeff;
 
-        PeerServer& server;
+        GAPeerServer& server;
 
         /* MATLAB rankScaling */
         void performFitnessScaling();
@@ -187,21 +208,21 @@ class GeneticAlgorithm
         GeneticAlgorithm(FitnessFunctionPT ffpt, MutationFunctionPT mfpt,
                          CrossoverFunctionPT cfpt,
                          GAUtils::SelectionFunctionType sft,
-                        PeerServer& server);
+                        GAPeerServer& server);
         GeneticAlgorithm(FitnessFunctionPT ffpt, MutationFunctionPT mfpt,
                          GAUtils::CrossoverFunctionType cft,
                          GAUtils::SelectionFunctionType sft,
-                        PeerServer& server);
+                        GAPeerServer& server);
         GeneticAlgorithm(FitnessFunctionPT ffpt,
                          GAUtils::MutationFunctionType mft,
                          CrossoverFunctionPT cfpt,
                          GAUtils::SelectionFunctionType sft,
-                        PeerServer& server);
+                        GAPeerServer& server);
         GeneticAlgorithm(FitnessFunctionPT ffpt,
                          GAUtils::MutationFunctionType mft,
                          GAUtils::CrossoverFunctionType cft,
                          GAUtils::SelectionFunctionType sft,
-                        PeerServer& server);
+                        GAPeerServer& server);
 
         /* Run the genetic algorithm with a user-provided initial
            population. */
@@ -311,7 +332,8 @@ void GeneticAlgorithm<IT,OT>::commonConstructor()
 
     prev = succ = -1; // TODO temporary: these will go away
 
-    sendBuffer = receiveBuffer = NULL;
+    sendBuffer = NULL;
+    receiveBuffer = NULL;
     pointersBuffer = NULL;
     receivedIndividualsScores = NULL;
 
@@ -329,7 +351,7 @@ GeneticAlgorithm<IT,OT>::GeneticAlgorithm(FitnessFunctionPT ffpt,
                                           MutationFunctionPT mfpt,
                                           CrossoverFunctionPT cfpt,
                                           GAUtils::SelectionFunctionType sft,
-                                          PeerServer& _server
+                                          GAPeerServer& _server
                                         ) : fitnessFunctionPointer(ffpt),
                                             mutationFunctionPointer(mfpt),
                                             mutationFunctionPointerTM(NULL),
@@ -352,7 +374,7 @@ GeneticAlgorithm<IT,OT>::GeneticAlgorithm(FitnessFunctionPT ffpt,
                                           MutationFunctionPT mfpt,
                                           GAUtils::CrossoverFunctionType cft,
                                           GAUtils::SelectionFunctionType sft,
-                                          PeerServer& _server
+                                          GAPeerServer& _server
                                         ) : fitnessFunctionPointer(ffpt),
                                             mutationFunctionPointer(mfpt),
                                             mutationFunctionPointerTM(NULL),
@@ -376,7 +398,7 @@ GeneticAlgorithm<IT,OT>::GeneticAlgorithm(FitnessFunctionPT ffpt,
                                           GAUtils::MutationFunctionType mft,
                                           CrossoverFunctionPT cfpt,
                                           GAUtils::SelectionFunctionType sft,
-                                          PeerServer& _server
+                                          GAPeerServer& _server
                                         ) : fitnessFunctionPointer(ffpt),
                                             mutationFunctionPointer(NULL),
                                             mutationFunctionType(mft),
@@ -403,7 +425,7 @@ GeneticAlgorithm<IT,OT>::GeneticAlgorithm(FitnessFunctionPT ffpt,
                                           GAUtils::MutationFunctionType mft,
                                           GAUtils::CrossoverFunctionType cft,
                                           GAUtils::SelectionFunctionType sft,
-                                          PeerServer& _server
+                                          GAPeerServer& _server
                                         ) : fitnessFunctionPointer(ffpt),
                                             mutationFunctionPointer(NULL),
                                             mutationFunctionType(mft),
@@ -509,46 +531,9 @@ void GeneticAlgorithm<IT,OT>::shuffleParents()
 template <class IT, class OT>
 void GeneticAlgorithm<IT,OT>::gatherResults()
 {
-    if (1 || server.master())
-    {
-        int numCores = server.num_peers();
-        IT** bestIndividuals = new IT*[numCores];
-        OT* bestScores = new  OT[numCores];
-        for (int i=0; i<numCores; i++) {
-            /* We do this copy only to call the copy constructor, so that
-               memory is allocated for the new objects (if necessary). */
-            bestIndividuals[i] = new IT(population[0]);
-        }
-
-        bestIndividuals[0] = infoHeap.heapArray[0].pointer;
-        bestScores[0] = infoHeap.heapArray[0].score;
-        for (int i=1; i<numCores; i++)
-        {
-            meshInterfacePointer->receiveIndividuals(receiveBuffer,
-                                                     sizeof(IT), i);
-            gaUtils.deserializeAndCopy<IT>(receiveBuffer,
-                                           &bestIndividuals[i], 1);
-            bestScores[i] = (*fitnessFunctionPointer)(*(bestIndividuals[i])) ;
-        }
-        cout << "Global best individuals:\n";
-        for (int i=0; i<numCores; i++)
-            cout << "(" << i + 1 << ")  " << *(bestIndividuals[i]) <<
-                    ", score = " << bestScores[i] << "\n";
-        delete [] bestIndividuals;
-        delete [] bestScores;
-    }
-    else
-    {
-        IT** bestIndividual = new IT*;
-        RemoteConnection connection(server.get_master());
-        MigrationMsg msg(sendBuffer, NMI * sizeof(IT));
-
-        *bestIndividual = infoHeap.heapArray[0].pointer;
-        gaUtils.serializeAndCopy<IT>(sendBuffer, bestIndividual, 1);
-        msg.serialize(connection);
-
-        delete *bestIndividual;
-    }
+    cout << "Local best individual:" << endl;
+    cout << "    " << *(infoHeap.heapArray[0].pointer)
+            << ", score = " << infoHeap.heapArray[0].score << endl;
 }
 
 
@@ -608,67 +593,65 @@ void GeneticAlgorithm<IT,OT>::gaCore()
             cout << "\n";
             */
 
-            if (myColor == MPL_RED) {
-                RemoteConnection connection(server.get_succ());
-                MigrationMsg msg(sendBuffer, NMI * sizeof(IT));
+            /* Send a migration message to the succ peer. */
+            RemoteConnection connection(server.get_succ());
+            MigrationMsg msg(sendBuffer, NMI * sizeof(IT));
 
-                msg.serialize(connection);
+            msg.serialize(connection);
 
-                meshInterfacePointer->receiveIndividuals(receiveBuffer,
-                                                         NMI * sizeof(IT),
-                                                         prev);
-            } else /* (myColor == MPL_BLACK) */ {
-                RemoteConnection connection(server.get_succ());
-                MigrationMsg msg(sendBuffer, NMI * sizeof(IT));
+            receiveBuffer->lock();
 
-                meshInterfacePointer->receiveIndividuals(receiveBuffer,
-                                                         NMI * sizeof(IT),
-                                                         prev);
-                msg.serialize(connection);
+            if (receiveBuffer->len == 0) {
+                /* No migration message received. */
+                receiveBuffer->unlock();
+            } else {
+                /* Process a received migration message. */
 
-            }
+                /* Discards the NMI worst individuals (infoHeap.heapArray is
+                   sorted) by decreasing infoheap.lastNode, and puts their
+                   address in pointersBuffer. */
+                for (unsigned int i=0; i<NMI; i++)
+                    pointersBuffer[i] =
+                        infoHeap.heapArray[infoHeap.lastNode--].pointer;
+                /* Deserializes the message received and replaces discarded
+                   individuals with the received ones. */
+                gaUtils.deserializeAndCopy<IT>(receiveBuffer->ptr, pointersBuffer, NMI);
 
-            /* Discards the NMI worst individuals (infoHeap.heapArray is
-               sorted) by decreasing infoheap.lastNode, and puts their
-               address in pointersBuffer. */
-            for (unsigned int i=0; i<NMI; i++)
-                pointersBuffer[i] =
-                            infoHeap.heapArray[infoHeap.lastNode--].pointer;
-            /* Deserializes the message received and replaces discarded
-               individuals with the received ones. */
-            gaUtils.deserializeAndCopy<IT>(receiveBuffer, pointersBuffer, NMI);
+                receiveBuffer->len = 0;
+                receiveBuffer->unlock();
 
-            /*
-            cout << "Receiveing... \n";
-            for (int i=0; i<NMI; i++)
-            cout << *(pointersBuffer[i]) << "\n";
-            cout << "\n";
-            */
+                /*
+                   cout << "Receiveing... \n";
+                   for (int i=0; i<NMI; i++)
+                   cout << *(pointersBuffer[i]) << "\n";
+                   cout << "\n";
+                   */
 
-            /* Computes the fitness of the new individuals. */
-            for (unsigned int i=0; i<NMI; i++) {
-                receivedIndividualsScores[i] =
-                            (*fitnessFunctionPointer)(*(pointersBuffer[i]));
-            }
-
-            /* Merges new individuals with local individuals. */
-            int kr = NMI - 1,
-                kh = infoHeap.lastNode,
-                heapIndex = N - 1;
-            while (heapIndex >= 0)
-                if (infoHeap.heapArray[kh].score >
-                    receivedIndividualsScores[kr]) {
-                    infoHeap.heapArray[heapIndex].pointer =
-                                    infoHeap.heapArray[kh].pointer;
-                    infoHeap.heapArray[heapIndex--].score =
-                                    infoHeap.heapArray[kh--].score;
-                } else {
-                    infoHeap.heapArray[heapIndex].pointer =
-                                            pointersBuffer[kr];
-                    infoHeap.heapArray[heapIndex--].score =
-                                            receivedIndividualsScores[kr--];
+                /* Computes the fitness of the new individuals. */
+                for (unsigned int i=0; i<NMI; i++) {
+                    receivedIndividualsScores[i] =
+                        (*fitnessFunctionPointer)(*(pointersBuffer[i]));
                 }
-            infoHeap.lastNode = N - 1;
+
+                /* Merges new individuals with local individuals. */
+                int kr = NMI - 1,
+                    kh = infoHeap.lastNode,
+                    heapIndex = N - 1;
+                while (heapIndex >= 0)
+                    if (infoHeap.heapArray[kh].score >
+                            receivedIndividualsScores[kr]) {
+                        infoHeap.heapArray[heapIndex].pointer =
+                            infoHeap.heapArray[kh].pointer;
+                        infoHeap.heapArray[heapIndex--].score =
+                            infoHeap.heapArray[kh--].score;
+                    } else {
+                        infoHeap.heapArray[heapIndex].pointer =
+                            pointersBuffer[kr];
+                        infoHeap.heapArray[heapIndex--].score =
+                            receivedIndividualsScores[kr--];
+                    }
+                infoHeap.lastNode = N - 1;
+            }
         }
 
         /* Scales raw fitnesses. */
@@ -708,8 +691,6 @@ void GeneticAlgorithm<IT,OT>::gaCore()
                                             *(selectedParents[ spi+1 ]),
                                             nextPopulation[i]);
         }
-
-
 
         /* Performs mutation and stores resulting children in
            nextPopulation[NCC:N-1]. */
@@ -810,12 +791,12 @@ void GeneticAlgorithm<IT,OT>::run(const std::vector<IT>& initialPopulation,
         if (sendBuffer != NULL)
         {
             delete [] sendBuffer;
-            delete [] receiveBuffer;
+            delete receiveBuffer;
             delete [] pointersBuffer;
             delete [] receivedIndividualsScores;
         }
-        sendBuffer = new MeshByte[ sizeof(IT) * NMI ];
-        receiveBuffer = new MeshByte[ sizeof(IT) * NMI ];
+        sendBuffer = new uint8_t[ sizeof(IT) * NMI ];
+        receiveBuffer = new GAReceiveBuffer(sizeof(IT) * NMI);
         pointersBuffer = new IT*[NMI];
         receivedIndividualsScores = new OT[NMI];
     }
@@ -871,6 +852,8 @@ void GeneticAlgorithm<IT,OT>::run(const std::vector<IT>& initialPopulation,
         population[i] = initialPopulation[i];
         nextPopulation[i] = initialPopulation[i];
     }
+
+    server.set_receive_buffer(receiveBuffer);
 
     if (DEBUG) cout << "Starting optimization...!\n";
     gaCore();

@@ -61,8 +61,8 @@ class GAUtils
 
         void refreshMutationGaussianParameters(int numGen, int maxGen);
 
-        template <class T> void serializeAndCopy(MeshByte* buffer, T** pointersBuffer, int num);
-        template <class T> void deserializeAndCopy(MeshByte* buffer, T** pointersBuffer, int num);
+        template <class T> void serializeAndCopy(uint8_t* buffer, T** pointersBuffer, int num);
+        template <class T> void deserializeAndCopy(uint8_t* buffer, T** pointersBuffer, int num);
 
         void generate(unsigned int N, vector<float>& v, float lb, float ub);
         void generate(unsigned int popSize, vector<double>& v, double lb, double ub);
@@ -84,42 +84,42 @@ class GAUtils
 
 // SERIALIZATION
     template <class T>
-void GAUtils::serializeAndCopy(MeshByte* buffer, T** pointersBuffer, int num)
+void GAUtils::serializeAndCopy(uint8_t* buffer, T** pointersBuffer, int num)
 {
     GAError("Error: You must provide a serialization function for this input data type");
 }
 
 template <>
-void GAUtils::serializeAndCopy<float>(MeshByte* buffer, float** pointersBuffer, int num);
+void GAUtils::serializeAndCopy<float>(uint8_t* buffer, float** pointersBuffer, int num);
 
 template <>
-void GAUtils::serializeAndCopy<double>(MeshByte* buffer, double** pointersBuffer, int num);
+void GAUtils::serializeAndCopy<double>(uint8_t* buffer, double** pointersBuffer, int num);
 
 template <>
-void GAUtils::serializeAndCopy<FloatVector>(MeshByte* buffer, FloatVector** pointersBuffer, int num);
+void GAUtils::serializeAndCopy<FloatVector>(uint8_t* buffer, FloatVector** pointersBuffer, int num);
 
 template <>
-void GAUtils::serializeAndCopy<DoubleVector>(MeshByte* buffer, DoubleVector** pointersBuffer, int num);
+void GAUtils::serializeAndCopy<DoubleVector>(uint8_t* buffer, DoubleVector** pointersBuffer, int num);
 
 
 // DESERIALIZATION
 template <class T>
-void GAUtils::deserializeAndCopy(MeshByte* buffer, T** pointersBuffer, int num)
+void GAUtils::deserializeAndCopy(uint8_t* buffer, T** pointersBuffer, int num)
 {
     GAError("Error: You must provide a serialization function for this input data type");
 }
 
 template <>
-void GAUtils::deserializeAndCopy<float>(MeshByte* buffer, float** pointersBuffer, int num);
+void GAUtils::deserializeAndCopy<float>(uint8_t* buffer, float** pointersBuffer, int num);
 
 template <>
-void GAUtils::deserializeAndCopy<double>(MeshByte* buffer, double** pointersBuffer, int num);
+void GAUtils::deserializeAndCopy<double>(uint8_t* buffer, double** pointersBuffer, int num);
 
 template <>
-void GAUtils::deserializeAndCopy<FloatVector>(MeshByte* buffer, FloatVector** pointersBuffer, int num);
+void GAUtils::deserializeAndCopy<FloatVector>(uint8_t* buffer, FloatVector** pointersBuffer, int num);
 
 template <>
-void GAUtils::deserializeAndCopy<DoubleVector>(MeshByte* buffer, DoubleVector** pointersBuffer, int num);
+void GAUtils::deserializeAndCopy<DoubleVector>(uint8_t* buffer, DoubleVector** pointersBuffer, int num);
 
 
 // CONVEX CROSSOVER

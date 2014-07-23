@@ -5,17 +5,17 @@
 
 #include <iostream>
 #include <cstring>
+#include <stdint.h>
 
 using namespace std;
 
 
 enum NodeColor { MPL_RED = 0, MPL_BLACK = 1 };
-typedef char MeshByte;
 
 class SccMeshInterface
 {
     public:
-        void receiveIndividuals(MeshByte* msg, size_t totalSize, int ID);
+        void receiveIndividuals(uint8_t* msg, size_t totalSize, int ID);
 };
 
 #endif

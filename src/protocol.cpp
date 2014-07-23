@@ -22,17 +22,21 @@ JoinRequest::JoinRequest(const string& _ip, uint32_t _port) :
 {
 }
 
-void JoinRequest::serialize(RemoteConnection& remote) const
+int JoinRequest::serialize(RemoteConnection& remote) const
 {
     remote.serialize(static_cast<uint8_t>(JOIN));
     remote.serialize(ip);
     remote.serialize(port);
+
+    return 0;
 }
 
-void JoinRequest::deserialize(RemoteConnection& remote)
+int JoinRequest::deserialize(RemoteConnection& remote)
 {
     remote.deserialize(ip);
     remote.deserialize(port);
+
+    return 0;
 }
 
 /* LeaveRequest */
@@ -41,21 +45,25 @@ LeaveRequest::LeaveRequest(const string& _ip, uint32_t _port) :
 {
 }
 
-void LeaveRequest::serialize(RemoteConnection& remote) const
+int LeaveRequest::serialize(RemoteConnection& remote) const
 {
     remote.serialize(static_cast<uint8_t>(LEAVE));
     remote.serialize(ip);
     remote.serialize(port);
+
+    return 0;
 }
 
-void LeaveRequest::deserialize(RemoteConnection& remote)
+int LeaveRequest::deserialize(RemoteConnection& remote)
 {
     remote.deserialize(ip);
     remote.deserialize(port);
+
+    return 0;
 }
 
 /* UpdateRequest */
-void UpdateRequest::serialize(RemoteConnection& remote) const
+int UpdateRequest::serialize(RemoteConnection& remote) const
 {
     remote.serialize(static_cast<uint8_t>(UPDATE));
     remote.serialize(static_cast<uint8_t>(add ? 1 : 0));
@@ -64,9 +72,11 @@ void UpdateRequest::serialize(RemoteConnection& remote) const
         remote.serialize(members[i].ip);
         remote.serialize(static_cast<uint32_t>(members[i].port));
     }
+
+    return 0;
 }
 
-void UpdateRequest::deserialize(RemoteConnection& remote)
+int UpdateRequest::deserialize(RemoteConnection& remote)
 {
     uint8_t add_;
     uint32_t sz;
@@ -81,6 +91,8 @@ void UpdateRequest::deserialize(RemoteConnection& remote)
         remote.deserialize(port);
         members.push_back(Member(Remote(ip, port)));
     }
+
+    return 0;
 }
 
 /* Response */
@@ -88,12 +100,16 @@ Response::Response(const string& _content) : content(_content)
 {
 }
 
-void Response::serialize(RemoteConnection& remote) const
+int Response::serialize(RemoteConnection& remote) const
 {
     remote.serialize(content);
+
+    return 0;
 }
 
-void Response::deserialize(RemoteConnection& remote)
+int Response::deserialize(RemoteConnection& remote)
 {
     remote.deserialize(content);
+
+    return 0;
 }

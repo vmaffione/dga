@@ -260,7 +260,7 @@ void RemoteConnection::serialize(const string& str)
     this->send_message(str.c_str(), len);
 }
 
-void RemoteConnection::deserialize(char *dst, unsigned int avail,
+void RemoteConnection::deserialize(uint8_t *dst, unsigned int avail,
                                    unsigned int& retlen)
 {
     int n;
@@ -286,7 +286,7 @@ void RemoteConnection::deserialize(char *dst, unsigned int avail,
     return;
 }
 
-void RemoteConnection::serialize(const char *src, const unsigned int len)
+void RemoteConnection::serialize(const uint8_t *src, const unsigned int len)
 {
     serialize(static_cast<uint8_t>(len));
     this->send_message(src, len);

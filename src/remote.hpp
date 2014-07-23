@@ -48,14 +48,14 @@ class RemoteConnection {
         void deserialize(uint8_t& byte);
         void serialize(uint32_t dw);
         void deserialize(uint32_t& dw);
-        void serialize(const char *src, const unsigned int len);
-        void deserialize(char *dst, unsigned int avail, unsigned int& len);
+        void serialize(const uint8_t *src, const unsigned int len);
+        void deserialize(uint8_t *dst, unsigned int avail, unsigned int& len);
 };
 
 class Message {
     public:
-        virtual void serialize(RemoteConnection& remote) const = 0;
-        virtual void deserialize(RemoteConnection& remote) = 0;
+        virtual int serialize(RemoteConnection& remote) const = 0;
+        virtual int deserialize(RemoteConnection& remote) = 0;
 };
 
 class Server {

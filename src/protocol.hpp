@@ -29,8 +29,8 @@ class JoinRequest : public Message {
 
         JoinRequest() : port(0) { }
         JoinRequest(const std::string& _ip, uint32_t _port);
-        void serialize(RemoteConnection& remote) const;
-        void deserialize(RemoteConnection& remote);
+        int serialize(RemoteConnection& remote) const;
+        int deserialize(RemoteConnection& remote);
 };
 
 class LeaveRequest : public Message {
@@ -40,8 +40,8 @@ class LeaveRequest : public Message {
 
         LeaveRequest() : port(0) { }
         LeaveRequest(const std::string& _ip, uint32_t _port);
-        void serialize(RemoteConnection& remote) const;
-        void deserialize(RemoteConnection& remote);
+        int serialize(RemoteConnection& remote) const;
+        int deserialize(RemoteConnection& remote);
 };
 
 class UpdateRequest : public Message {
@@ -50,8 +50,8 @@ class UpdateRequest : public Message {
         bool add;
 
         UpdateRequest() : add(true) { }
-        void serialize(RemoteConnection& remote) const;
-        void deserialize(RemoteConnection& remote);
+        int serialize(RemoteConnection& remote) const;
+        int deserialize(RemoteConnection& remote);
 };
 
 class Response : public Message {
@@ -60,8 +60,8 @@ class Response : public Message {
 
         Response() { }
         Response(const std::string& _content);
-        void serialize(RemoteConnection& remote) const;
-        void deserialize(RemoteConnection& remote);
+        int serialize(RemoteConnection& remote) const;
+        int deserialize(RemoteConnection& remote);
 };
 
 #endif  /* __MEMBER_HPP__ */

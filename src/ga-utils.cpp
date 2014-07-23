@@ -22,7 +22,7 @@ ostream& operator<<(ostream& os, const DoubleVector& r)
 }
 
 template <>
-void GAUtils::serializeAndCopy<float>(MeshByte* buffer, float** pointersBuffer, int num)
+void GAUtils::serializeAndCopy<float>(uint8_t* buffer, float** pointersBuffer, int num)
 {
     float* floatBuffer = reinterpret_cast< float* >(buffer);
     for (int i=0; i<num; i++, floatBuffer++)
@@ -30,7 +30,7 @@ void GAUtils::serializeAndCopy<float>(MeshByte* buffer, float** pointersBuffer, 
 }
 
 template <>
-void GAUtils::serializeAndCopy<double>(MeshByte* buffer, double** pointersBuffer, int num)
+void GAUtils::serializeAndCopy<double>(uint8_t* buffer, double** pointersBuffer, int num)
 {
     double* doubleBuffer = reinterpret_cast< double* >(buffer);
     for (int i=0; i<num; i++, doubleBuffer++)
@@ -38,7 +38,7 @@ void GAUtils::serializeAndCopy<double>(MeshByte* buffer, double** pointersBuffer
 }
 
 template <>
-void GAUtils::serializeAndCopy<FloatVector>(MeshByte* buffer, FloatVector** pointersBuffer, int num)
+void GAUtils::serializeAndCopy<FloatVector>(uint8_t* buffer, FloatVector** pointersBuffer, int num)
 {
     int floatVectorSize = sizeof(float) * D;
     for (int i=0; i<num; i++, buffer += floatVectorSize)
@@ -46,7 +46,7 @@ void GAUtils::serializeAndCopy<FloatVector>(MeshByte* buffer, FloatVector** poin
 }
 
 template <>
-void GAUtils::serializeAndCopy<DoubleVector>(MeshByte* buffer, DoubleVector** pointersBuffer, int num)
+void GAUtils::serializeAndCopy<DoubleVector>(uint8_t* buffer, DoubleVector** pointersBuffer, int num)
 {
     int doubleVectorSize = sizeof(double) * D;
     for (int i=0; i<num; i++, buffer += doubleVectorSize)
@@ -54,7 +54,7 @@ void GAUtils::serializeAndCopy<DoubleVector>(MeshByte* buffer, DoubleVector** po
 }
 
 template <>
-void GAUtils::deserializeAndCopy<float>(MeshByte* buffer, float** pointersBuffer, int num)
+void GAUtils::deserializeAndCopy<float>(uint8_t* buffer, float** pointersBuffer, int num)
 {
     float* floatBuffer = reinterpret_cast< float* >(buffer);
     for (int i=0; i<num; i++, floatBuffer++)
@@ -62,7 +62,7 @@ void GAUtils::deserializeAndCopy<float>(MeshByte* buffer, float** pointersBuffer
 }
 
 template <>
-void GAUtils::deserializeAndCopy<double>(MeshByte* buffer, double** pointersBuffer, int num)
+void GAUtils::deserializeAndCopy<double>(uint8_t* buffer, double** pointersBuffer, int num)
 {
     double* doubleBuffer = reinterpret_cast< double* >(buffer);
     for (int i=0; i<num; i++, doubleBuffer++)
@@ -70,7 +70,7 @@ void GAUtils::deserializeAndCopy<double>(MeshByte* buffer, double** pointersBuff
 }
 
 template <>
-void GAUtils::deserializeAndCopy<FloatVector>(MeshByte* buffer, FloatVector** pointersBuffer, int num)
+void GAUtils::deserializeAndCopy<FloatVector>(uint8_t* buffer, FloatVector** pointersBuffer, int num)
 {
     int floatVectorSize = sizeof(float) * D;
     for (int i=0; i<num; i++, buffer += floatVectorSize)
@@ -78,7 +78,7 @@ void GAUtils::deserializeAndCopy<FloatVector>(MeshByte* buffer, FloatVector** po
 }
 
 template <>
-void GAUtils::deserializeAndCopy<DoubleVector>(MeshByte* buffer, DoubleVector** pointersBuffer, int num)
+void GAUtils::deserializeAndCopy<DoubleVector>(uint8_t* buffer, DoubleVector** pointersBuffer, int num)
 {
     int doubleVectorSize = sizeof(double) * D;
     for (int i=0; i<num; i++, buffer += doubleVectorSize)
