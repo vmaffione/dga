@@ -330,11 +330,7 @@ void GeneticAlgorithm<IT,OT>::commonConstructor()
     pointersBuffer = NULL;
     receivedIndividualsScores = NULL;
 
-    cout << "My unique is " << server.get_unique() <<
-            ", prev = " << server.get_prev().to_string() <<
-            ", succ = " << server.get_succ().to_string() << "\n";
-
-    std::cout << "A genetic algorithm object was generated!\n";
+    cout << "My unique is " << server.get_unique() << endl;
 
 }
 

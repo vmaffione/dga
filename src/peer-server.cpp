@@ -305,6 +305,9 @@ PeerServer::update_social()
     if (succ == members.end()) {
         succ = members.begin();
     }
+
+    std::cout << "New prev is " << prev->to_string() <<
+                ", new succ is " << succ->to_string() << endl;
 }
 
 Member PeerServer::get_prev() const

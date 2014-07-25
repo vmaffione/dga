@@ -56,8 +56,6 @@ int work(GAPeerServer *serv)
     }
     catch (GAError) {  }
 
-    cout << "Ultima!\n";
-
     return 0;
 }
 
