@@ -151,7 +151,9 @@ PeerServer::process_request(RemoteConnection& connection)
 {
     uint8_t opcode;
 
-    IFD(cout << "Request received from : " << connection.remote.to_string() << endl);
+#if (DBG >= DBG_LOT)
+    cout << "Request received from : " << connection.remote.to_string() << endl;
+#endif
     connection.deserialize(opcode);
 
     if (opcode == JOIN) {

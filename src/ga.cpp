@@ -1,3 +1,4 @@
+#include "ifd.hpp"
 #include "ga.hpp"
 #include "remote.hpp"
 
@@ -62,7 +63,10 @@ int GAPeerServer::process_message(uint8_t opcode, RemoteConnection& connection)
     }
     recvbuf->unlock();
 
-    cout << "Migration message received" << endl;
+#if (DBG >= DBG_LOT)
+    cout << "Migration message received (" << recvbuf->len
+            << " bytes)" << endl;
+#endif
 
     return 0;
 }

@@ -1,5 +1,5 @@
 CC=g++
-CXXFLAGS=-g -Wall
+CXXFLAGS=-g -Wall -D DBG=1
 ARCHBITS=$(shell getconf LONG_BIT)
 MAIN_OBJS=main.o stoc1.o randomaelf$(ARCHBITS).a peer-server.o remote.o protocol.o ga.o ga-utils.o
 EXES=main

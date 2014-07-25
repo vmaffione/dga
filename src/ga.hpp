@@ -552,7 +552,7 @@ void GeneticAlgorithm<IT,OT>::gaCore()
         /* Sorts population by scaled scores. */
         infoHeap.sortLocally();
 
-#ifdef DEBUG
+#if (DBG >= DBG_TOO_MUCH)
         cout << "Core " << server.get_unique() <<
             ", generazione " << numGenerations << ":\n";
         for (unsigned int i=0; i<N; i++)
@@ -613,12 +613,12 @@ void GeneticAlgorithm<IT,OT>::gaCore()
                 receiveBuffer->len = 0;
                 receiveBuffer->unlock();
 
-                /*
-                   cout << "Receiveing... \n";
-                   for (int i=0; i<NMI; i++)
-                   cout << *(pointersBuffer[i]) << "\n";
-                   cout << "\n";
-                   */
+#if (DBG >= DBG_FEW)
+                cout << "Receiveing migrated individuals" << endl;
+                for (unsigned int i=0; i<NMI; i++)
+                    cout << "    " << *(pointersBuffer[i]) << endl;
+                cout << endl;
+#endif
 
                 /* Computes the fitness of the new individuals. */
                 for (unsigned int i=0; i<NMI; i++) {
@@ -850,7 +850,9 @@ void GeneticAlgorithm<IT,OT>::run(const std::vector<IT>& initialPopulation,
 
     server.set_receive_buffer(receiveBuffer);
 
-    IFD(cout << "Starting optimization...!\n");
+#if (DBG >= DBG_LOT)
+    cout << "Starting optimization...!\n";
+#endif
     gaCore();
 }
 
