@@ -150,8 +150,7 @@ PeerServer::process_request(RemoteConnection& connection)
 {
     uint8_t opcode;
 
-    cout << "Request received from : " << connection.remote.ip <<
-        ":" << connection.remote.port << endl;
+    cout << "Request received from : " << connection.remote.to_string() << endl;
     connection.deserialize(opcode);
 
     if (opcode == JOIN) {
@@ -203,7 +202,7 @@ PeerServer::process_request(RemoteConnection& connection)
                 request.members.size() << ")" << endl;
         for (unsigned int i = 0; i < request.members.size(); i++) {
             const Member& m = request.members[i];
-            cout << "   Member " << m.ip << " " << m.port << endl;
+            cout << "   Member " << m.to_string() << endl;
             if (request.add) {
                 add_member(m);
             } else {
@@ -306,4 +305,22 @@ PeerServer::update_social()
     if (succ == members.end()) {
         succ = members.begin();
     }
+}
+
+Member PeerServer::get_prev() const
+{
+    if (prev == members.end()) {
+        return Member();
+    }
+
+    return *prev;
+}
+
+Member PeerServer::get_succ() const
+{
+    if (succ == members.end()) {
+        return Member();
+    }
+
+    return *succ;
 }

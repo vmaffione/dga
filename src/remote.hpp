@@ -27,6 +27,8 @@ class Remote {
         Remote(std::string _ip, uint16_t _port);
         bool operator==(const Remote&) const;
         bool operator<(const Remote&) const;
+        std::string to_string() const;
+        bool operator()() const;
 };
 
 class RemoteConnection {

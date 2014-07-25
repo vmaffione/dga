@@ -178,7 +178,6 @@ class GeneticAlgorithm
         GAReceiveBuffer *receiveBuffer;
         IT** pointersBuffer;
         OT* receivedIndividualsScores;
-        int prev, succ;
 
         GAUtils::SelectionFunctionType SFType;
 
@@ -326,15 +325,14 @@ void GeneticAlgorithm<IT,OT>::commonConstructor()
     N = 0;
     maxGenerations = -1; CF = -1.0; NEC = -1; MF = -1.0; MP = -1;
 
-    prev = succ = -1; // TODO temporary: these will go away
-
     sendBuffer = NULL;
     receiveBuffer = NULL;
     pointersBuffer = NULL;
     receivedIndividualsScores = NULL;
 
     cout << "My unique is " << server.get_unique() <<
-            ", prevID = " << prev << ", succID = " << succ << "\n";
+            ", prev = " << server.get_prev().to_string() <<
+            ", succ = " << server.get_succ().to_string() << "\n";
 
     std::cout << "A genetic algorithm object was generated!\n";
 

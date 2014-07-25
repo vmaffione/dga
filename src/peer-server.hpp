@@ -51,11 +51,13 @@ class PeerServer : public Server {
 
         unsigned int get_unique() const { return id; }
         Member get_me() const { return *me; }
-        Member get_prev() const { return *prev; }
-        Member get_succ() const { return *succ; }
-        Member get_master() const { return *(members.begin()); }
+        Member get_prev() const;
+        Member get_succ() const;
         unsigned int num_peers() const { return members.size(); }
+
+        /* Currently unused. */
         bool master() const { return me == members.begin(); }
+        Member get_master() const { return *(members.begin()); }
 
         virtual int process_message(uint8_t opcode,
                                     RemoteConnection& connection) = 0;

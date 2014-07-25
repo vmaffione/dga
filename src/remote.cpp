@@ -1,6 +1,7 @@
 #include "remote.hpp"
 
 #include <iostream>
+#include <sstream>
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <arpa/inet.h>
@@ -48,6 +49,28 @@ bool Remote::operator==(const Remote& r) const
 bool Remote::operator<(const Remote& r) const
 {
     return ip < r.ip || port < r.port;
+}
+
+bool Remote::operator()() const
+{
+    return port || ip != "0.0.0.0";
+}
+
+Remote::Remote(std::string _ip, uint16_t _port) : ip(_ip), port(_port)
+{
+    memset(&address, 0, sizeof(address));
+    address.sin_family = AF_INET;
+    inet_pton(AF_INET, ip.c_str(), &address.sin_addr);
+    address.sin_port = htons(port);
+}
+
+string Remote::to_string() const
+{
+    ostringstream ss;
+
+    ss << ip << ":" << port;
+
+    return ss.str();
 }
 
 RemoteConnection::RemoteConnection(int _fd, const Remote& r) : remote(r)
@@ -184,14 +207,6 @@ int Server::run()
     }
 
     return 0;
-}
-
-Remote::Remote(std::string _ip, uint16_t _port) : ip(_ip), port(_port)
-{
-    memset(&address, 0, sizeof(address));
-    address.sin_family = AF_INET;
-    inet_pton(AF_INET, ip.c_str(), &address.sin_addr);
-    address.sin_port = htons(port);
 }
 
 void RemoteConnection::deserialize(uint8_t& byte)
