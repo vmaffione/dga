@@ -1,19 +1,17 @@
 #ifndef GAUTILS_
 #define GAUTILS_
 
+#include "peer-server.hpp"
+
 #include <vector>
 #include <fstream>
 
-#include "peer-server.hpp"
 
-using namespace std;
+typedef std::vector<float> FloatVector;
+typedef std::vector<double> DoubleVector;
 
-
-typedef vector<float> FloatVector;
-typedef vector<double> DoubleVector;
-
-ostream& operator<<(ostream& os, const FloatVector& r);
-ostream& operator<<(ostream& os, const DoubleVector& r);
+std::ostream& operator<<(std::ostream& os, const FloatVector& r);
+std::ostream& operator<<(std::ostream& os, const DoubleVector& r);
 
 //  Agner Fog's random number generator librares
 #include "randoma.h"  // uniform generator
@@ -63,19 +61,19 @@ class GAUtils
         template <class T> void serializeAndCopy(uint8_t* buffer, T** pointersBuffer, int num);
         template <class T> void deserializeAndCopy(uint8_t* buffer, T** pointersBuffer, int num);
 
-        void generate(unsigned int N, vector<float>& v, float lb, float ub);
-        void generate(unsigned int popSize, vector<double>& v, double lb, double ub);
-        void generate(unsigned int N, vector<FloatVector>& v, const vector<float>& lbs, const vector<float>& ubs);
-        void generate(unsigned int N, vector<DoubleVector>& v, const vector<double>& lbs, const vector<double>& ubs);
+        void generate(unsigned int N, std::vector<float>& v, float lb, float ub);
+        void generate(unsigned int popSize, std::vector<double>& v, double lb, double ub);
+        void generate(unsigned int N, std::vector<FloatVector>& v, const std::vector<float>& lbs, const std::vector<float>& ubs);
+        void generate(unsigned int N, std::vector<DoubleVector>& v, const std::vector<double>& lbs, const std::vector<double>& ubs);
 
         /*
            class RandomGenerator
            {
            public:
-           void generate(int N, vector<float>& v, float lb, float ub);
-           void generate(unsigned int popSize, vector<double>& v, double lb, double ub);
-           void generate(int N, vector<FloatVector>& v, int dim, const vector<float>& lbs, const vector<float>& ubs);
-           void generate(int N, vector<DoubleVector>& v, int dim, const vector<double>& lbs, const vector<double>& ubs);
+           void generate(int N, std::vector<float>& v, float lb, float ub);
+           void generate(unsigned int popSize, std::vector<double>& v, double lb, double ub);
+           void generate(int N, std::vector<FloatVector>& v, int dim, const std::vector<float>& lbs, const std::vector<float>& ubs);
+           void generate(int N, std::vector<DoubleVector>& v, int dim, const std::vector<double>& lbs, const std::vector<double>& ubs);
            };
            RandomGenerator randomGenerator;*/
 };

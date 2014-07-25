@@ -1,5 +1,7 @@
 #include "ga-utils.hpp"
 
+using namespace std;
+
 
 ostream& operator<<(ostream& os, const FloatVector& r)
 {

@@ -2,6 +2,9 @@
 #define GENETIC_ALGORITHM_
 
 #include "ifd.hpp"
+#include "ga-error.hpp"
+#include "ga-utils.hpp"
+#include "peer-server.hpp"
 
 #include <iostream>
 #include <typeinfo>  // for RTTI
@@ -11,13 +14,7 @@
 #include <cstring>
 #include <stdint.h>
 #include <pthread.h>
-
-
-using namespace std; // per colpa dell'operatore ostream& operator<< di IT
-
-#include "ga-error.hpp"
-#include "ga-utils.hpp"
-#include "peer-server.hpp"
+#include <unistd.h>
 
 
 class GAReceiveBuffer {
@@ -118,7 +115,7 @@ class GeneticAlgorithm
                 void reset() { lastNode = -1; }
 
                 /* Insert an element into the heap. */
-                void insert(IndividualInfo);
+                void insert(const IndividualInfo&);
 
                 /* Sort the array heapArray using heap-sort */
                 void sortLocally();
@@ -330,7 +327,7 @@ void GeneticAlgorithm<IT,OT>::commonConstructor()
     pointersBuffer = NULL;
     receivedIndividualsScores = NULL;
 
-    cout << "My unique is " << server.get_unique() << endl;
+    std::cout << "My unique is " << server.get_unique() << std::endl;
 
 }
 
@@ -496,7 +493,7 @@ void GeneticAlgorithm<IT,OT>::performParentsSelection()
             break;
     }
     /* for (int i=0; i<P; i++)
-        cout << *(selectedParents[i]) << ", "; cout << "\n";
+        std::cout << *(selectedParents[i]) << ", "; std::cout << "\n";
     */
 }
 
@@ -520,9 +517,9 @@ void GeneticAlgorithm<IT,OT>::shuffleParents()
 template <class IT, class OT>
 void GeneticAlgorithm<IT,OT>::gatherResults()
 {
-    cout << "Local best individual:" << endl;
-    cout << "    " << *(infoHeap.heapArray[0].pointer)
-            << ", score = " << infoHeap.heapArray[0].score << endl;
+    std::cout << "Local best individual:" << std::endl;
+    std::cout << "    " << *(infoHeap.heapArray[0].pointer)
+            << ", score = " << infoHeap.heapArray[0].score << std::endl;
 }
 
 
@@ -553,10 +550,10 @@ void GeneticAlgorithm<IT,OT>::gaCore()
         infoHeap.sortLocally();
 
 #if (DBG >= DBG_TOO_MUCH)
-        cout << "Core " << server.get_unique() <<
+        std::cout << "Core " << server.get_unique() <<
             ", generazione " << numGenerations << ":\n";
         for (unsigned int i=0; i<N; i++)
-            cout << *(infoHeap.heapArray[i].pointer) <<
+            std::cout << *(infoHeap.heapArray[i].pointer) <<
                 ", score = " << infoHeap.heapArray[i].score << "\n";
 #endif
 
@@ -573,10 +570,10 @@ void GeneticAlgorithm<IT,OT>::gaCore()
             gaUtils.serializeAndCopy<IT>(sendBuffer, pointersBuffer, NMI);
 
             /*
-            cout << "Sending... \n";
+            std::cout << "Sending... \n";
             for (int i=0; i<NMI; i++)
-            cout << *(pointersBuffer[i]) << "\n";
-            cout << "\n";
+            std::cout << *(pointersBuffer[i]) << "\n";
+            std::cout << "\n";
             */
 
             /* Send a migration message to the succ peer. */
@@ -589,7 +586,7 @@ void GeneticAlgorithm<IT,OT>::gaCore()
             } else {
                 std::cerr << __func__ << ": Cannot open a connection to "
                             "succ " << server.get_succ().ip << ":" <<
-                            server.get_succ().port << endl;
+                            server.get_succ().port << std::endl;
             }
 
             receiveBuffer->lock();
@@ -614,10 +611,10 @@ void GeneticAlgorithm<IT,OT>::gaCore()
                 receiveBuffer->unlock();
 
 #if (DBG >= DBG_FEW)
-                cout << "Receiveing migrated individuals" << endl;
+                std::cout << "Receiveing migrated individuals" << std::endl;
                 for (unsigned int i=0; i<NMI; i++)
-                    cout << "    " << *(pointersBuffer[i]) << endl;
-                cout << endl;
+                    std::cout << "    " << *(pointersBuffer[i]) << std::endl;
+                std::cout << std::endl;
 #endif
 
                 /* Computes the fitness of the new individuals. */
@@ -715,9 +712,9 @@ void GeneticAlgorithm<IT,OT>::gaCore()
            for (int i=0; i<N; i++)
            {
            for (int d=0; d<D; d++)
-           cout << population[i][d] << ", ";
-           cout << "\n";
-           }cout << "\n";system("PAUSE");*/
+           std::cout << population[i][d] << ", ";
+           std::cout << "\n";
+           }std::cout << "\n";system("PAUSE");*/
 
         /* Evaluates fitness on the new population and builds the new heap. */
         infoHeap.reset();
@@ -742,11 +739,11 @@ void GeneticAlgorithm<IT,OT>::gaCore()
 
     infoHeap.sortLocally();
 
-    cout << "Optimization terminated! Best results:\n";
+    std::cout << "Optimization terminated! Best results:\n";
     for (unsigned int i=0; i<((N>3) ? 3 : N); i++)
-        cout << "(" << i+1 << ") " << *(infoHeap.heapArray[i].pointer) <<
+        std::cout << "(" << i+1 << ") " << *(infoHeap.heapArray[i].pointer) <<
             ", score " << infoHeap.heapArray[i].score << "\n";
-    cout << "\n";
+    std::cout << "\n";
 
     gatherResults();
 }
@@ -811,7 +808,7 @@ void GeneticAlgorithm<IT,OT>::run(const std::vector<IT>& initialPopulation,
         }
 
 
-        /*cout << "Parameters: " <<  CF << ", " << NEC << ", "
+        /*std::cout << "Parameters: " <<  CF << ", " << NEC << ", "
                 << maxGenerations << "\n"; */
         population = new IT[ N ];      /* IT default constructor. */
         nextPopulation = new IT[ N ];  /* IT default constructor. */
@@ -851,7 +848,7 @@ void GeneticAlgorithm<IT,OT>::run(const std::vector<IT>& initialPopulation,
     server.set_receive_buffer(receiveBuffer);
 
 #if (DBG >= DBG_LOT)
-    cout << "Starting optimization...!\n";
+    std::cout << "Starting optimization...!\n";
 #endif
     gaCore();
 }
@@ -890,11 +887,10 @@ void GeneticAlgorithm<IT,OT>::InfoHeap::reinit(unsigned int n)
     }
 }
 
-// XXX (const IndividualInfo& element)     ?????
 template <class IT, class OT>
-void GeneticAlgorithm<IT,OT>::InfoHeap::insert(IndividualInfo element)
+void GeneticAlgorithm<IT,OT>::InfoHeap::insert(const IndividualInfo& element)
 {
-    //cout << "heap last position = " << lastNode+1 << "\n";
+    //std::cout << "heap last position = " << lastNode+1 << "\n";
     if (lastNode == static_cast<int>(N-1))
         throw GAError("Bug: lo heap è andato in overflow durante un "
                       "tentativo di inserimento");
