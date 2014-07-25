@@ -1,4 +1,4 @@
-#include "ga-utils.h"
+#include "ga-utils.hpp"
 
 
 ostream& operator<<(ostream& os, const FloatVector& r)

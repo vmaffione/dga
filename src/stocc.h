@@ -203,7 +203,7 @@
 #include <math.h>
 #include "randomc.h"
 #include "randoma.h"  // V.M. [in order to use binary library]
-#include "ga-error.h"  // V.M. [in order to replace FatalError with a GA exception]
+#include "ga-error.hpp"  // V.M. [in order to replace FatalError with a GA exception]
 
 #ifdef R_BUILD
    #include "stocR.h"           // Include this when building R-language interface

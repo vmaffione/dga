@@ -13,8 +13,8 @@
 
 using namespace std; // per colpa dell'operatore ostream& operator<< di IT
 
-#include "ga-error.h"
-#include "ga-utils.h"
+#include "ga-error.hpp"
+#include "ga-utils.hpp"
 #include "peer-server.hpp"
 
 #define DEBUG 0

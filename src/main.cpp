@@ -2,7 +2,7 @@
 #include <time.h>
 #include <stdlib.h>
 
-#include "ga.h"
+#include "ga.hpp"
 
 int l = 0;
 
@@ -89,6 +89,7 @@ main(int argc, char **argv)
     int ret;
 
     if (argc < 2) {
+        errno = EINVAL;
         exit_with_error("USAGE: program PORT [JOINPORT]");
     }
     s_port = atoi(argv[1]);

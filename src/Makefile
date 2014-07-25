@@ -9,15 +9,15 @@ all: $(EXES)
 main: $(MAIN_OBJS)
 	$(CC) -o $@ $(MAIN_OBJS) -lpthread
 
-main.o: ga.h ga-utils.h peer-server.hpp
+main.o: ga.hpp ga-utils.hpp peer-server.hpp
 
 peer-server.o: remote.hpp protocol.hpp
 
 remote.o: remote.hpp
 
-ga.o: ga.h ga-utils.h
+ga.o: ga.hpp ga-utils.hpp
 
-ga-utils.o: ga-utils.h
+ga-utils.o: ga-utils.hpp
 
 clean:
 	rm *.o $(EXES)
