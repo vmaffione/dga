@@ -562,8 +562,6 @@ void GeneticAlgorithm<IT,OT>::gaCore()
 
         /* Carries out migration procedures. */
         if (server.num_peers() > 1 && migrationCountdown == 0) {
-            migrationCountdown = MP;
-
             /* Gets the pointers to the best NMI individuals (here
                infoHeap.heapArray is sorted, so we can pick the first
                elements). */
@@ -735,6 +733,10 @@ void GeneticAlgorithm<IT,OT>::gaCore()
         numGenerations++;
         if (numGenerations == maxGenerations)
             break;
+
+        if (migrationCountdown <= 0) {
+            migrationCountdown = MP;
+        }
         migrationCountdown--;
     }
 
