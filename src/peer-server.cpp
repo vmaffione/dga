@@ -1,3 +1,4 @@
+#include "ifd.hpp"
 #include "peer-server.hpp"
 
 #include <iostream>
@@ -150,7 +151,7 @@ PeerServer::process_request(RemoteConnection& connection)
 {
     uint8_t opcode;
 
-    cout << "Request received from : " << connection.remote.to_string() << endl;
+    IFD(cout << "Request received from : " << connection.remote.to_string() << endl);
     connection.deserialize(opcode);
 
     if (opcode == JOIN) {

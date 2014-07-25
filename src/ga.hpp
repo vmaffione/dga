@@ -1,6 +1,8 @@
 #ifndef GENETIC_ALGORITHM_
 #define GENETIC_ALGORITHM_
 
+#include "ifd.hpp"
+
 #include <iostream>
 #include <typeinfo>  // for RTTI
 #include <vector>
@@ -16,8 +18,6 @@ using namespace std; // per colpa dell'operatore ostream& operator<< di IT
 #include "ga-error.hpp"
 #include "ga-utils.hpp"
 #include "peer-server.hpp"
-
-#define DEBUG 0
 
 
 class GAReceiveBuffer {
@@ -552,13 +552,13 @@ void GeneticAlgorithm<IT,OT>::gaCore()
         /* Sorts population by scaled scores. */
         infoHeap.sortLocally();
 
-        if (DEBUG /* && meshInterfacePointer->getMyID()==0 */) {
-            cout << "Core " << server.get_unique() <<
-                    ", generazione " << numGenerations << ":\n";
-            for (unsigned int i=0; i<N; i++)
-                cout << *(infoHeap.heapArray[i].pointer) <<
-                        ", score = " << infoHeap.heapArray[i].score << "\n";
-        }
+#ifdef DEBUG
+        cout << "Core " << server.get_unique() <<
+            ", generazione " << numGenerations << ":\n";
+        for (unsigned int i=0; i<N; i++)
+            cout << *(infoHeap.heapArray[i].pointer) <<
+                ", score = " << infoHeap.heapArray[i].score << "\n";
+#endif
 
         /* Carries out migration procedures. */
         if (server.num_peers() > 1 && migrationCountdown == 0) {
@@ -742,13 +742,11 @@ void GeneticAlgorithm<IT,OT>::gaCore()
 
     infoHeap.sortLocally();
 
-    if (!DEBUG) {
-        cout << "Optimization terminated! Best results:\n";
-        for (unsigned int i=0; i<((N>3) ? 3 : N); i++)
-            cout << "(" << i+1 << ") " << *(infoHeap.heapArray[i].pointer) <<
-                    ", score " << infoHeap.heapArray[i].score << "\n";
-        cout << "\n";
-    }
+    cout << "Optimization terminated! Best results:\n";
+    for (unsigned int i=0; i<((N>3) ? 3 : N); i++)
+        cout << "(" << i+1 << ") " << *(infoHeap.heapArray[i].pointer) <<
+            ", score " << infoHeap.heapArray[i].score << "\n";
+    cout << "\n";
 
     gatherResults();
 }
@@ -852,7 +850,7 @@ void GeneticAlgorithm<IT,OT>::run(const std::vector<IT>& initialPopulation,
 
     server.set_receive_buffer(receiveBuffer);
 
-    if (DEBUG) cout << "Starting optimization...!\n";
+    IFD(cout << "Starting optimization...!\n");
     gaCore();
 }
 
