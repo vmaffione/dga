@@ -61,12 +61,13 @@ class Message {
 };
 
 class Server {
+        std::string ip;
         uint16_t port;
         int listen_fd;
         struct sockaddr_in server_address;
 
     public:
-        Server(uint16_t p);
+        Server(const std::string& ipa, uint16_t p);
         int run();
         virtual int process_request(RemoteConnection& remote) = 0;
         virtual ~Server() { }

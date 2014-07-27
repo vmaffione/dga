@@ -2,6 +2,7 @@
 #include <time.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <arpa/inet.h>
 
 #include "ga.hpp"
 
@@ -87,8 +88,20 @@ print_usage()
     cout << "Options usage:" << endl;
     cout << "\t-h: show this help" << endl;
     cout << "\t-p PORTNUM: port number of the peer server" << endl;
+    cout << "\t-l IPADDR : ip address of the local peer server" << endl;
     cout << "\t-j PORTNUM: port number of the remote server to join" << endl;
+    cout << "\t-r IPADDR : ip address of the remote server to join" << endl;
     cout << endl;
+}
+
+static bool is_ipaddr(const string& s)
+{
+    int ret;
+    char buf[sizeof(struct in_addr)];
+
+    ret = inet_pton(AF_INET, s.c_str(), buf);
+
+    return ret > 0;
 }
 
 int
@@ -96,12 +109,14 @@ main(int argc, char **argv)
 {
     unsigned int s_port = ~0U;
     unsigned int j_port = ~0U;
+    string s_ip("127.0.0.1");
+    string j_ip("127.0.0.1");
     struct sigaction sa;
     pthread_t server_tid;
     int ret;
     int ch;
 
-    while ((ch = getopt(argc, argv, "hp:j:")) != -1) {
+    while ((ch = getopt(argc, argv, "hp:j:l:r:")) != -1) {
         switch (ch) {
             case 'p':
                 s_port = atoi(optarg);
@@ -117,9 +132,28 @@ main(int argc, char **argv)
                     errno = EINVAL;
                     exit_with_error("join port > 65535");
                 }
+                break;
+
+            case 'l':
+                s_ip = string(optarg);
+                if (!is_ipaddr(s_ip)) {
+                    errno = EINVAL;
+                    exit_with_error("invalid server IP address");
+                }
+                break;
+
+            case 'r':
+                j_ip = string(optarg);
+                if (!is_ipaddr(j_ip)) {
+                    errno = EINVAL;
+                    exit_with_error("invalid remote IP address");
+                }
+                break;
+
             case 'h':
                 print_usage();
                 exit(EXIT_SUCCESS);
+                break;
         }
     }
 
@@ -129,7 +163,7 @@ main(int argc, char **argv)
         exit(EXIT_FAILURE);
     }
 
-    server = new GAPeerServer(s_port, j_port);
+    server = new GAPeerServer(s_ip, s_port, j_ip, j_port);
 
     sa.sa_handler = sigint_handler;
     sigemptyset(&sa.sa_mask);

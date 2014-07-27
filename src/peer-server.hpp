@@ -23,7 +23,7 @@
 
 
 class PeerServer : public Server {
-        unsigned int join_port;
+        Remote join_remote;
 
     protected:
         std::set<Member>::iterator me;
@@ -36,7 +36,8 @@ class PeerServer : public Server {
         void update_social();
 
     public:
-        PeerServer(unsigned int s_port, unsigned j_port);
+        PeerServer(const std::string& s_ip, unsigned int s_port,
+                   const std::string& j_ip, unsigned int j_port);
 
         virtual int process_request(RemoteConnection& connection);
 

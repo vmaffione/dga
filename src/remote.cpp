@@ -151,7 +151,7 @@ int RemoteConnection::recv_message(void *buf, unsigned size) const
     return n;
 }
 
-Server::Server(uint16_t p) : port(p)
+Server::Server(const string& ipa, uint16_t p) : ip(ipa), port(p)
 {
     int optval;
     int ret;
@@ -161,6 +161,7 @@ Server::Server(uint16_t p) : port(p)
         exit_with_error("creating listening socket");
     }
 
+    /* The 'ip' member is currently unused. */
     memset(&server_address, 0, sizeof(server_address));
     server_address.sin_family = AF_INET;
     server_address.sin_addr.s_addr = htonl(INADDR_ANY);

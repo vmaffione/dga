@@ -21,12 +21,13 @@
 using namespace std;
 
 
-PeerServer::PeerServer(unsigned int s_port, unsigned int j_port) :
-                        Server(s_port), join_port(j_port),
+PeerServer::PeerServer(const string& s_ip, unsigned int s_port,
+                       const string& j_ip, unsigned int j_port) :
+                        Server(s_ip, s_port), join_remote(j_ip, j_port),
                         me(members.end()),
                         prev(members.end()), succ(members.end())
 {
-    add_member(Remote("127.0.0.1", s_port));
+    add_member(Remote(s_ip, s_port));
     me = members.begin();
     id = s_port * 2 + 4673;
 }
@@ -223,9 +224,8 @@ PeerServer::process_request(RemoteConnection& connection)
 int
 PeerServer::join()
 {
-    Remote remote("127.0.0.1", join_port);
-    RemoteConnection connection(remote);
-    JoinRequest message("127.0.0.1", me->port);
+    RemoteConnection connection(join_remote);
+    JoinRequest message(me->ip, me->port);
     Response response;
 
     if (!connection.open) {
@@ -250,7 +250,7 @@ PeerServer::join()
 int
 PeerServer::leave()
 {
-    unsigned int leave_port = join_port;
+    Member leave_member = join_remote;
 
     if (members.size() == 1 && *(members.begin()) == *me) {
         /* I'm the only one left, no LEAVE procedure
@@ -265,12 +265,11 @@ PeerServer::leave()
             it++;
         }
         assert(it != members.end());
-        leave_port = it->port;
+        leave_member = *it;
     }
 
-    Remote remote("127.0.0.1", leave_port);
-    RemoteConnection connection(remote);
-    LeaveRequest request("127.0.0.1", me->port);
+    RemoteConnection connection(leave_member);
+    LeaveRequest request(me->ip, me->port);
     Response response;
 
     if (!connection.open) {

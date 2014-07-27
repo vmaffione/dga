@@ -30,8 +30,9 @@ void GAReceiveBuffer::unlock()
     pthread_mutex_unlock(&lock_);
 }
 
-GAPeerServer::GAPeerServer(unsigned int s_port, unsigned int j_port)
-                    : PeerServer(s_port, j_port), recvbuf(NULL)
+GAPeerServer::GAPeerServer(const string& s_ip, unsigned int s_port,
+                           const string& j_ip, unsigned int j_port)
+                    : PeerServer(s_ip, s_port, j_ip, j_port), recvbuf(NULL)
 {
 }
 

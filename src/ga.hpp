@@ -49,7 +49,8 @@ class GAPeerServer : public PeerServer {
         GAReceiveBuffer *recvbuf;
 
     public:
-        GAPeerServer(unsigned int s_port, unsigned int j_port);
+        GAPeerServer(const std::string& s_ip, unsigned int s_port,
+                     const std::string& j_ip, unsigned int j_port);
         int process_message(uint8_t opcode,
                                     RemoteConnection& connection);
         void set_receive_buffer(GAReceiveBuffer *b);
