@@ -1,6 +1,7 @@
 #include <iostream>
 #include <time.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 #include "ga.hpp"
 
@@ -80,31 +81,52 @@ sigint_handler(int signum)
     exit(EXIT_SUCCESS);
 }
 
+static void
+print_usage()
+{
+    cout << "Options usage:" << endl;
+    cout << "\t-h: show this help" << endl;
+    cout << "\t-p PORTNUM: port number of the peer server" << endl;
+    cout << "\t-j PORTNUM: port number of the remote server to join" << endl;
+    cout << endl;
+}
+
 int
 main(int argc, char **argv)
 {
-    unsigned int s_port;
+    unsigned int s_port = ~0U;
     unsigned int j_port = ~0U;
     struct sigaction sa;
     pthread_t server_tid;
     int ret;
+    int ch;
 
-    if (argc < 2) {
-        errno = EINVAL;
-        exit_with_error("USAGE: program PORT [JOINPORT]");
-    }
-    s_port = atoi(argv[1]);
-    if (s_port >= 65535) {
-        errno = EINVAL;
-        exit_with_error("PORT > 65535");
-    }
+    while ((ch = getopt(argc, argv, "hp:j:")) != -1) {
+        switch (ch) {
+            case 'p':
+                s_port = atoi(optarg);
+                if (s_port >= 65535) {
+                    errno = EINVAL;
+                    exit_with_error("server port > 65535");
+                }
+                break;
 
-    if (argc > 2) {
-        j_port = atoi(argv[2]);
-        if (j_port >= 65535) {
-            errno = EINVAL;
-            exit_with_error("PORT > 65535");
+            case 'j':
+                j_port = atoi(optarg);
+                if (j_port >= 65535) {
+                    errno = EINVAL;
+                    exit_with_error("join port > 65535");
+                }
+            case 'h':
+                print_usage();
+                exit(EXIT_SUCCESS);
         }
+    }
+
+    if (s_port == ~0U) {
+        cout << "server port missing" << endl;
+        print_usage();
+        exit(EXIT_FAILURE);
     }
 
     server = new GAPeerServer(s_port, j_port);
