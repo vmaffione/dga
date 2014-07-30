@@ -1,0 +1,7 @@
+Limitare la variabilità di OT : float,double, custom??
+Nel caso generale in cui IT è qualsiasi (quindi anche un oggetto grosso), dovendo fare ordinamenti degli individui, l'array population dovrebbe contenere puntatori agli individui. Se però l'array è un numero reale conviene in realtà.
+IT deve ridefinire l'operatore di uscita standard << .
+il campo score lo metto in individuals oppure in population ??
+ottimizzare gli operatori genetici built-in in modo che la funzione che implementa l’operatore venga chiamata una sola volta e in tale record di attivazione esegua l’operatore su tutti gli individui su cui va eseguita (invece di sprecare una chiamata di funzione per ogni individuo)
+Quando si deve fare una send di individui, sono possibili due scelte: invio solo l’individuo oppure invio anche il valore della funzione obiettivo? La prima scelta è preferibile nel caso in cui siano più pesanti le comunicazioni, mentre la seconda è preferibile nel caso sia più pesante la valutazione della funzione obiettivo. Per ora ho seguito la prima strada, ma probabilmente è meglio la seconda nella maggiorparte dei casi reali.
+Perché tra la generazione 1 e la 2 (e ovviamente anche nelle successive) si creano tanti doppioni??
