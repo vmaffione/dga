@@ -317,6 +317,17 @@ void GeneticAlgorithm<IT,OT>::demultiplexMutationType(
 template <class IT, class OT>
 void GeneticAlgorithm<IT,OT>::commonConstructor()
 {
+    /* Platform checking. */
+    if ((strcmp(typeid(IT).name(), typeid(float).name()) == 0 ||
+         strcmp(typeid(IT).name(), typeid(FloatVector).name()) == 0) && sizeof(float) != 4) {
+        throw GAError("Your compiler uses non-standard float representation");
+    }
+
+    if ((strcmp(typeid(IT).name(), typeid(double).name()) == 0 ||
+         strcmp(typeid(IT).name(), typeid(DoubleVector).name()) == 0) && sizeof(double) != 8) {
+        throw GAError("Your compiler uses non-standard double representation");
+    }
+
     /* Input checking. */
     if (!isOutputTypeValid(typeid(OT).name()))
         throw GAError("Bad output type");

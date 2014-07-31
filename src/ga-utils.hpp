@@ -80,7 +80,7 @@ class GAUtils
 
 
 // SERIALIZATION
-    template <class T>
+template <class T>
 void GAUtils::serializeAndCopy(uint8_t* buffer, T** pointersBuffer, int num)
 {
     GAError("Error: You must provide a serialization function for this input data type");

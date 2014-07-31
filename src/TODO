@@ -1,1 +1,3 @@
 [O] dynamic linking solution to make it possible to run different fitness functions --> e.g. fitness function + GA instance in a shared object
+[O] properly serialize float
+[O] IT = vector of booleans

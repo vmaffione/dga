@@ -1,5 +1,7 @@
 #include "ga-utils.hpp"
 
+#include <endian.h>
+
 using namespace std;
 
 
@@ -28,7 +30,7 @@ void GAUtils::serializeAndCopy<float>(uint8_t* buffer, float** pointersBuffer, i
 {
     float* floatBuffer = reinterpret_cast< float* >(buffer);
     for (int i=0; i<num; i++, floatBuffer++)
-        *floatBuffer = *(pointersBuffer[i]);
+        *floatBuffer = htole32(*(pointersBuffer[i]));
 }
 
 template <>
@@ -36,23 +38,33 @@ void GAUtils::serializeAndCopy<double>(uint8_t* buffer, double** pointersBuffer,
 {
     double* doubleBuffer = reinterpret_cast< double* >(buffer);
     for (int i=0; i<num; i++, doubleBuffer++)
-        *doubleBuffer = *(pointersBuffer[i]);
+        *doubleBuffer = htole64(*(pointersBuffer[i]));
 }
 
 template <>
 void GAUtils::serializeAndCopy<FloatVector>(uint8_t* buffer, FloatVector** pointersBuffer, int num)
 {
-    int floatVectorSize = sizeof(float) * D;
-    for (int i=0; i<num; i++, buffer += floatVectorSize)
-        memcpy(buffer, &(pointersBuffer[i]->operator[](0)), floatVectorSize);
+    float *floatBuffer = reinterpret_cast<float*>(buffer);
+
+    for (int i = 0; i < num; i++) {
+        for (unsigned int j = 0; j < D; j++) {
+            *floatBuffer = htole32((*pointersBuffer[i])[j]);
+            floatBuffer++;
+        }
+    }
 }
 
 template <>
 void GAUtils::serializeAndCopy<DoubleVector>(uint8_t* buffer, DoubleVector** pointersBuffer, int num)
 {
-    int doubleVectorSize = sizeof(double) * D;
-    for (int i=0; i<num; i++, buffer += doubleVectorSize)
-        memcpy(buffer, &(pointersBuffer[i]->operator[](0)), doubleVectorSize);
+    double *doubleBuffer = reinterpret_cast<double*>(buffer);
+
+    for (int i = 0; i < num; i++) {
+        for (unsigned int j = 0; j < D; j++) {
+            *doubleBuffer = htole64((*pointersBuffer[i])[j]);
+            doubleBuffer++;
+        }
+    }
 }
 
 template <>
@@ -60,7 +72,7 @@ void GAUtils::deserializeAndCopy<float>(uint8_t* buffer, float** pointersBuffer,
 {
     float* floatBuffer = reinterpret_cast< float* >(buffer);
     for (int i=0; i<num; i++, floatBuffer++)
-        *(pointersBuffer[i]) = *floatBuffer;
+        *(pointersBuffer[i]) = le32toh(*floatBuffer);
 }
 
 template <>
@@ -68,23 +80,33 @@ void GAUtils::deserializeAndCopy<double>(uint8_t* buffer, double** pointersBuffe
 {
     double* doubleBuffer = reinterpret_cast< double* >(buffer);
     for (int i=0; i<num; i++, doubleBuffer++)
-        *(pointersBuffer[i]) = *doubleBuffer;
+        *(pointersBuffer[i]) = le64toh(*doubleBuffer);
 }
 
 template <>
 void GAUtils::deserializeAndCopy<FloatVector>(uint8_t* buffer, FloatVector** pointersBuffer, int num)
 {
-    int floatVectorSize = sizeof(float) * D;
-    for (int i=0; i<num; i++, buffer += floatVectorSize)
-        memcpy(&(pointersBuffer[i]->operator[](0)), buffer, floatVectorSize);
+    float *floatBuffer = reinterpret_cast<float*>(buffer);
+
+    for (int i = 0; i < num; i++) {
+        for (unsigned int j = 0; j < D; j++) {
+            (*pointersBuffer[i])[j] = le32toh(*floatBuffer);
+            floatBuffer++;
+        }
+    }
 }
 
 template <>
 void GAUtils::deserializeAndCopy<DoubleVector>(uint8_t* buffer, DoubleVector** pointersBuffer, int num)
 {
-    int doubleVectorSize = sizeof(double) * D;
-    for (int i=0; i<num; i++, buffer += doubleVectorSize)
-        memcpy(&(pointersBuffer[i]->operator[](0)), buffer, doubleVectorSize);
+    double *doubleBuffer = reinterpret_cast<double*>(buffer);
+
+    for (int i = 0; i < num; i++) {
+        for (unsigned int j = 0; j < D; j++) {
+            (*pointersBuffer[i])[j] = le64toh(*doubleBuffer);
+            doubleBuffer++;
+        }
+    }
 }
 
 template <>
