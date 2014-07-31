@@ -19,6 +19,7 @@
 
 class GAReceiveBuffer {
         pthread_mutex_t lock_;
+        pthread_cond_t ready_;
 
     public:
         uint8_t *ptr;
@@ -29,6 +30,8 @@ class GAReceiveBuffer {
         ~GAReceiveBuffer();
         void lock();
         void unlock();
+        void wait();
+        void signal();
 };
 
 #define MIGRATE_MSG_ID  95

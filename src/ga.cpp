@@ -12,11 +12,13 @@ GAReceiveBuffer::GAReceiveBuffer(unsigned int sz) : size(sz)
     ptr = new uint8_t[size];
     len = 0;
     pthread_mutex_init(&lock_, NULL);
+    pthread_cond_init(&ready_, NULL);
 }
 
 GAReceiveBuffer::~GAReceiveBuffer()
 {
     pthread_mutex_destroy(&lock_);
+    pthread_cond_destroy(&ready_);
     delete [] ptr;
 }
 
@@ -28,6 +30,16 @@ void GAReceiveBuffer::lock()
 void GAReceiveBuffer::unlock()
 {
     pthread_mutex_unlock(&lock_);
+}
+
+void GAReceiveBuffer::wait()
+{
+    pthread_cond_wait(&ready_, &lock_);
+}
+
+void GAReceiveBuffer::signal()
+{
+    pthread_cond_signal(&ready_);
 }
 
 GAPeerServer::GAPeerServer(const string& s_ip, unsigned int s_port,
