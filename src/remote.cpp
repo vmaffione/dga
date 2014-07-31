@@ -280,7 +280,7 @@ void RemoteConnection::deserialize(uint8_t *dst, unsigned int avail,
                                    unsigned int& retlen)
 {
     int n;
-    uint8_t lenbyte;
+    uint32_t lenbyte;
 
     deserialize(lenbyte);
     retlen = lenbyte;
@@ -304,6 +304,6 @@ void RemoteConnection::deserialize(uint8_t *dst, unsigned int avail,
 
 void RemoteConnection::serialize(const uint8_t *src, const unsigned int len)
 {
-    serialize(static_cast<uint8_t>(len));
+    serialize(static_cast<uint32_t>(len));
     this->send_message(src, len);
 }
